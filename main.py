@@ -1,4 +1,10 @@
 from flask import Flask
+from dotenv import load_dotenv
+import os
+
+load_dotenv()  # .env 파일에서 환경 변수 로드
+
+openai_api_key = os.getenv("OPENAI_API_KEY")
 
 app = Flask(__name__)
 

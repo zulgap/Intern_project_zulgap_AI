@@ -1,4 +1,10 @@
-venv/
+# Python 관련
 __pycache__/
 *.pyc
+
+# 가상환경
+venv/
+
+# 환경변수
 .env
+
