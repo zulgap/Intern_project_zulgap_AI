@@ -8,3 +8,13 @@ venv/
 # 환경변수
 .env
 
+# React/Node 관련
+node_modules/
+build/
+dist/
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+
