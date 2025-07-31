@@ -3,7 +3,6 @@ from dotenv import load_dotenv
 import os
 
 load_dotenv()  # .env 파일에서 환경 변수 로드
-
 openai_api_key = os.getenv("OPENAI_API_KEY")
 
 # React 빌드 폴더 경로 설정 (절대 경로로 수정)
