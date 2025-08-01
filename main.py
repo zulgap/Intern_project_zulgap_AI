@@ -24,7 +24,7 @@ app.config['JSON_AS_ASCII'] = False  # 한글 깨짐 방지
 def health_check():
     return '✅ 플라스크 API 정상 작동!'
 
-# 건강 체크 API (Render 헬스체크용)
+# 채팅 화면 테스트
 @app.route('/api/chat')
 def chat():
     return send_from_directory(app.static_folder, 'chat.html')
