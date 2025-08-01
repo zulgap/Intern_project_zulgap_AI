@@ -10,7 +10,7 @@ venv/
 
 # React/Node 관련
 node_modules/
-# build/
+build/
 dist/
 .env.local
 .env.development.local

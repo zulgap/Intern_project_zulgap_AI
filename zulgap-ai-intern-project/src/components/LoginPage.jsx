@@ -11,7 +11,7 @@ function LoginPage() {
     e.preventDefault();
     
     // 로그인 검증
-    if (email === 'jean@test.com' && password === 'password') {
+    if (email === 'test' && password === 'test') {
       console.log('로그인 성공!');
       
       // 로그인 상태 유지 옵션 처리
@@ -23,8 +23,8 @@ function LoginPage() {
         sessionStorage.setItem('userEmail', email);
       }
       
-      // 채팅 페이지로 이동
-      window.location.href = 'http://localhost:5000/api/chat';
+      // 채팅 페이지로 이동 (환경에 따라 자동 URL 설정)
+      window.location.href = '/api/chat';
     } else {
       alert('아이디 또는 비밀번호가 틀렸습니다.');
     }
