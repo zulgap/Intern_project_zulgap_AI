@@ -27,8 +27,8 @@ function LoginPage() {
         sessionStorage.setItem('userEmail', email);
       }
       
-      // React 채팅 페이지로 직접 이동
-      navigate('/chat-react');
+      // 홈화면으로 이동
+      navigate('/home');
 
     } else {
       alert('아이디 또는 비밀번호가 틀렸습니다.');

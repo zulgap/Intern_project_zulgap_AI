@@ -1,11 +1,13 @@
+//채팅페이지 프론트엔드
+ 
 import React, { useState } from 'react';
 
 const ChatPageReact = () => {
-  const [activeCategory, setActiveCategory] = useState('에이전트 채팅');
+  const [activeCategory, setActiveCategory] = useState('동료사 이름');
   const [messages, setMessages] = useState([
     {
       id: 1,
-      content: "🎉 환영합니다! ZULGAP.ai React 버전입니다. 대학생용 고급 채팅 인터페이스로 업그레이드되었어요!",
+      content: "Zulgap AI 어시스턴트 입니다. 무엇을 도와드릴까요?",
       isUser: false,
       timestamp: new Date().toLocaleTimeString('ko-KR', {hour: '2-digit', minute: '2-digit'})
     }
@@ -107,7 +109,7 @@ const ChatPageReact = () => {
         {/* Logo */}
         <div className="p-6 border-b border-gray-200">
           <h1 className="text-2xl font-bold text-black">ZULGAP.ai</h1>
-          <p className="text-xs text-blue-500 mt-1">🚀 React 전용</p>
+          <p className="text-xs text-blue-500 mt-1">🚀 워크플로우 자동화 프로젝트</p>
         </div>
 
         {/* Categories */}
@@ -170,7 +172,7 @@ const ChatPageReact = () => {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-lg font-semibold text-gray-900">{activeCategory}</h2>
-              <p className="text-sm text-gray-600">React 기반 AI 어시스턴트와 대화하세요</p>
+              <p className="text-sm text-gray-600">대화내용 한 줄 소개</p>
             </div>
           </div>
         </div>
