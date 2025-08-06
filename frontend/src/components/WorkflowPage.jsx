@@ -126,8 +126,13 @@ export default function WorkflowPage() {
         <div className="text-center mt-24">
           <div className="text-6xl text-blue-600 mb-6">✓</div>
           <h2 className="text-blue-600 text-3xl font-bold mb-4">블로그 게시가 완료되었습니다!</h2>
-          <a href="#" className="text-blue-600 underline hover:text-blue-800 transition-colors">
-            https://yourblog.com/post/1234
+          <a 
+            href="https://www.youtube.com/watch?v=p7dBBJ79OTs" 
+            className="text-blue-600 underline hover:text-blue-800 transition-colors"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            https://www.youtube.com/watch?v=p7dBBJ79OTs
           </a>
           <br />
           <button
