@@ -87,6 +87,20 @@ function Home() {
   const [selectedMenu, setSelectedMenu] = useState('에이전트 세팅');
   const [message, setMessage] = useState('');
 
+  const handleMenuClick = (menuLabel) => {
+    setSelectedMenu(menuLabel);
+    
+    // 워크 플로우 메뉴 클릭 시 워크플로우 페이지로 이동
+    if (menuLabel === '워크 플로우') {
+      navigate('/workflow');
+    }
+  };
+
+  const handleServiceCardClick = (cardTitle) => {
+    // 서비스 카드 클릭 시 채팅 페이지로 이동
+    navigate('/chat-react');
+  };
+
   const menuItems = [
     { icon: SettingsIcon, label: '에이전트 세팅', active: true },
     { icon: UsersIcon, label: '조직 관리', active: false },
@@ -153,7 +167,7 @@ function Home() {
             return (
               <button
                 key={index}
-                onClick={() => setSelectedMenu(item.label)}
+                onClick={() => handleMenuClick(item.label)}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
                   selectedMenu === item.label
                     ? 'bg-blue-50 text-blue-700 border border-blue-200'
@@ -205,7 +219,7 @@ function Home() {
                 return (
                   <div
                     key={index}
-                    onClick={() => navigate('/chat-react')}
+                    onClick={() => handleServiceCardClick(card.title)}
                    className={`${card.color} rounded-xl p-6 border hover:shadow-lg transition-all duration-200 cursor-pointer group hover:border-blue-300 hover:bg-blue-100`}
                   >
                     <div className="flex flex-col items-start text-left space-y-4">
