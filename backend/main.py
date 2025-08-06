@@ -46,4 +46,5 @@ def serve_react_routes(path):
 # 로컬 실행용 (Render에선 gunicorn이 실행)
 if __name__ == '__main__':
     # 개발용: 실시간 코드 변경 반영
-    app.run(host='127.0.0.1', port=5000, debug=True, use_reloader=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
