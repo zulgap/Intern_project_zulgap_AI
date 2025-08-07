@@ -1,4 +1,4 @@
-// 워크 플로우 페이지 프론트
+// 워크 플로우 메뉴
 
 import React, { useState } from 'react';
 

@@ -88,11 +88,13 @@ function Home() {
   const [message, setMessage] = useState('');
 
   const handleMenuClick = (menuLabel) => {
+    console.log('메뉴 클릭됨:', menuLabel); // ← 디버깅용 추가
     setSelectedMenu(menuLabel);
     
     // 워크 플로우 메뉴 클릭 시 워크플로우 페이지로 이동
     if (menuLabel === '워크 플로우') {
-      navigate('/workflow');
+        console.log('워크플로우로 이동'); // ← 디버깅용 추가
+        navigate('/workflow');
     }
   };
 
