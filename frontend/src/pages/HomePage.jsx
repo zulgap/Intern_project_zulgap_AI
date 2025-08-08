@@ -1,32 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Sidebar from '../components/Sidebar';
 
-// SVG 아이콘 컴포넌트들 (Lucide 대신 직접 구현)
-const SettingsIcon = () => (
-  <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-  </svg>
-);
-
-const UsersIcon = () => (
-  <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a4 4 0 11-8 0 4 4 0 018 0z" />
-  </svg>
-);
-
-const WorkflowIcon = () => (
-  <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14-4l-4 4 4 4m-10-4l-4-4 4-4" />
-  </svg>
-);
-
-const BotIcon = () => (
-  <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-  </svg>
-);
-
+// SVG 아이콘 컴포넌트들 (홈페이지에서 사용하는 것들만)
 const PlusIcon = () => (
   <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -84,31 +60,12 @@ const SendIcon = () => (
 
 function Home() {
   const navigate = useNavigate();
-  const [selectedMenu, setSelectedMenu] = useState('에이전트 세팅');
   const [message, setMessage] = useState('');
-
-  const handleMenuClick = (menuLabel) => {
-    console.log('메뉴 클릭됨:', menuLabel); // ← 디버깅용 추가
-    setSelectedMenu(menuLabel);
-    
-    // 워크 플로우 메뉴 클릭 시 워크플로우 페이지로 이동
-    if (menuLabel === '워크 플로우') {
-        console.log('워크플로우로 이동'); // ← 디버깅용 추가
-        navigate('/workflow');
-    }
-  };
 
   const handleServiceCardClick = (cardTitle) => {
     // 서비스 카드 클릭 시 채팅 페이지로 이동
     navigate('/chat-react');
   };
-
-  const menuItems = [
-    { icon: SettingsIcon, label: '에이전트 세팅', active: true },
-    { icon: UsersIcon, label: '조직 관리', active: false },
-    { icon: WorkflowIcon, label: '워크 플로우', active: false },
-    { icon: BotIcon, label: '에이전트 설정', active: false }
-  ];
 
   const serviceCards = [
     {
@@ -155,48 +112,19 @@ function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar */}
-      <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
-        {/* Logo */}
-        <div className="p-6 border-b border-gray-100">
-          <h1 className="text-2xl font-bold text-gray-900">ZULGAP.ai</h1>
-        </div>
-
-        {/* Menu Items */}
-        <nav className="flex-1 p-4 space-y-2">
-          {menuItems.map((item, index) => {
-            const IconComponent = item.icon;
-            return (
-              <button
-                key={index}
-                onClick={() => handleMenuClick(item.label)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
-                  selectedMenu === item.label
-                    ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                }`}
-              >
-                <IconComponent />
-                <span className="font-medium">{item.label}</span>
-              </button>
-            );
-          })}
-        </nav>
-      </div>
+      {/* Common Sidebar */}
+      <Sidebar />
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
         {/* Header */}
-        <header className="bg-white border-b border-gray-200 px-6 py-4">
-          <div className="flex items-center justify-end gap-4">
-            <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-              <PlusIcon />
-              새로운 세팅
-            </button>
-            
-            <div className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
-              <span className="text-gray-700">출발</span>
-              <ChevronDownIcon />
+        <header className="bg-white border-b border-gray-200 p-4">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-4">
+              <button className="flex items-center gap-2 text-gray-700 hover:text-gray-900">
+                <PlusIcon />
+                <span className="font-medium">새로운 대화</span>
+              </button>
             </div>
             
             <div className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">

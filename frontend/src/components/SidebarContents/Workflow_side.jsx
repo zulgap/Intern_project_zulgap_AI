@@ -15,3 +15,6 @@ const WorkflowSidebarContent = () => {
 };
 
 export default WorkflowSidebarContent;
+
+
+// 단계 구분하는 것 추후 추가

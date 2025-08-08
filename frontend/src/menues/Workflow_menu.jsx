@@ -1,6 +1,7 @@
 // 워크 플로우 메뉴
 
 import React, { useState } from 'react';
+import Sidebar from '../components/Sidebar';
 
 const steps = ['리서처', '플래너', '비주얼', '퍼블리셔'];
 
@@ -33,7 +34,25 @@ export default function WorkflowPage() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto font-sans p-5">
+    <div className="flex h-screen bg-gray-50">
+      {/* Common Sidebar */}
+      <Sidebar />
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col">
+        {/* Header */}
+        <header className="bg-white border-b border-gray-200 p-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">워크플로우</h2>
+              <p className="text-sm text-gray-600">자동화된 콘텐츠 제작 워크플로우</p>
+            </div>
+          </div>
+        </header>
+
+        {/* Workflow Content */}
+        <div className="flex-1 overflow-y-auto p-6">
+          <div className="max-w-4xl mx-auto">
       {/* Step Progress */}
       <div className="flex justify-between mb-8">
         {steps.map((step, idx) => (
@@ -147,6 +166,9 @@ export default function WorkflowPage() {
           </button>
         </div>
       )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

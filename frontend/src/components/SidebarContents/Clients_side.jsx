@@ -15,3 +15,5 @@ const PartnerSidebarContent = () => {
 };
 
 export default PartnerSidebarContent;
+
+//지금 화면은 비워두고 편집 화면 따로 만들어야 함. 편집 화면 용 사이드 바 파일 만들어야 함. 동료사 팀 추가 기능
