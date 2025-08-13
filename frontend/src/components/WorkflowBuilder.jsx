@@ -15,6 +15,7 @@ import {
   Cog,
   Download
 } from 'lucide-react';
+import Sidebar from './Sidebar';
 
 const WorkflowBuilder = () => {
   const [nodes, setNodes] = useState([
@@ -298,47 +299,50 @@ const WorkflowBuilder = () => {
 
   return (
     <div className="flex h-screen bg-gray-50">
-      {/* 사이드바 */}
-      <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
-        <div className="p-6 border-b border-gray-100">
-          <h1 className="text-2xl font-bold text-gray-900">ZULGAP.ai</h1>
+      {/* 기존 Sidebar 컴포넌트 사용 */}
+      <Sidebar />
+
+      {/* 메인 캔버스 */}
+      <div className="flex-1 flex flex-col">
+        {/* 워크플로우 캔버스 헤더 */}
+        <div className="bg-white border-b border-gray-200 p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-800">
+                워크플로우 빌더
+              </h2>
+              <p className="text-sm text-gray-500">드래그 앤 드롭으로 워크플로우를 구성해보세요</p>
+            </div>
+            <div className="flex items-center space-x-4">
+              <span className="text-sm text-gray-600">
+                노드 {nodes.length}개
+              </span>
+              <button
+                onClick={executeWorkflow}
+                disabled={isExecuting || nodes.length === 0}
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+              >
+                <Play size={16} />
+                <span>실행</span>
+              </button>
+            </div>
+          </div>
         </div>
 
-        <div className="p-4 space-y-1">
-          <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer">
-            <MessageSquare size={20} className="text-gray-600" />
-            <span className="text-gray-700">채팅</span>
-          </div>
-          
-          <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer">
-            <Bot size={20} className="text-gray-600" />
-            <span className="text-gray-700">봇과 관리</span>
-          </div>
-          
-          <div className="flex items-center space-x-3 p-3 rounded-lg bg-blue-50 border-l-4 border-blue-500">
-            <Workflow size={20} className="text-blue-600" />
-            <span className="text-blue-700 font-medium">워크플로우</span>
-          </div>
-          
-          <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer">
-            <Cog size={20} className="text-gray-600" />
-            <span className="text-gray-700">봇 설정</span>
-          </div>
-        </div>
-
-        {/* 노드 팔레트 */}
-        <div className="p-4 flex-1">
-          <h3 className="text-sm font-semibold text-gray-700 mb-3">🛠️ 노드 추가</h3>
-          <div className="grid grid-cols-2 gap-2">
+        {/* 노드 팔레트 툴바 */}
+        <div className="bg-white border-b border-gray-200 p-4">
+          <div className="flex items-center space-x-2">
+            <h3 className="text-sm font-semibold text-gray-700 mr-4">🛠️ 노드 추가:</h3>
             {Object.entries(nodeTypes).filter(([key]) => key !== 'start').map(([key, type]) => {
               const Icon = type.icon;
               return (
                 <button
                   key={key}
                   onClick={() => addNode(key)}
-                  className="p-3 border-2 border-dashed border-gray-300 hover:border-blue-400 rounded-lg transition-colors group"
+                  className="flex items-center space-x-2 px-3 py-2 border border-gray-300 hover:border-blue-400 rounded-lg transition-colors group"
+                  title={`${type.name} 노드 추가`}
                 >
-                  <div className={`p-2 rounded-full ${type.color} text-white mx-auto w-8 h-8 flex items-center justify-center mb-1`}>
+                  <div className={`p-1 rounded-full ${type.color} text-white`}>
                     <Icon size={14} />
                   </div>
                   <span className="text-xs text-gray-600 group-hover:text-blue-600">
@@ -347,32 +351,6 @@ const WorkflowBuilder = () => {
                 </button>
               );
             })}
-          </div>
-        </div>
-
-        {/* 실행 버튼 */}
-        <div className="p-4 border-t border-gray-200">
-          <button
-            onClick={executeWorkflow}
-            disabled={isExecuting || nodes.length === 0}
-            className="w-full p-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-          >
-            <Play size={16} />
-            <span>워크플로우 실행</span>
-          </button>
-        </div>
-      </div>
-
-      {/* 메인 캔버스 */}
-      <div className="flex-1 flex flex-col">
-        <div className="bg-white border-b border-gray-200 p-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-800">
-              워크플로우 캔버스
-            </h2>
-            <span className="text-sm text-gray-600">
-              노드 {nodes.length}개
-            </span>
           </div>
         </div>
 
