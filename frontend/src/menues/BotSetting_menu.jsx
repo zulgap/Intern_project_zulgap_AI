@@ -1,43 +1,23 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Bot, 
-  MessageSquare, 
-  Workflow, 
-  Cog, 
   Save,
   RefreshCw,
   Settings,
   User,
   FileText,
-  Sliders,
-  Edit3,
   Check,
   X,
   Upload,
   File,
   Trash2,
-  Link,
   Plus,
   ArrowRight,
-  Download,
   Loader2,
   AlertCircle,
   CheckCircle
 } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
-
-// 디바운스 함수
-const debounce = (func, wait) => {
-  let timeout;
-  return function executedFunction(...args) {
-    const later = () => {
-      clearTimeout(timeout);
-      func(...args);
-    };
-    clearTimeout(timeout);
-    timeout = setTimeout(later, wait);
-  };
-};
 
 const BotSetting_menu = () => {
   const [activeTab, setActiveTab] = useState('basic');
@@ -56,13 +36,8 @@ const BotSetting_menu = () => {
   });
   const [agentDocumentMappings, setAgentDocumentMappings] = useState({});
 
-  // 초기 데이터 로드
-  useEffect(() => {
-    loadInitialData();
-  }, []);
-
   // 초기 데이터 로드 (목업 데이터 사용)
-  const loadInitialData = async () => {
+  const loadInitialData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -82,7 +57,12 @@ const BotSetting_menu = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []); // useCallback 종료
+
+  // 초기 데이터 로드
+  useEffect(() => {
+    loadInitialData();
+  }, [loadInitialData]);
 
   // 에러/성공 메시지 표시
   const showMessage = (message, type = 'success') => {
@@ -373,7 +353,7 @@ const BotSetting_menu = () => {
         ...prev,
         [agentKey]: updatedAgent
       }));
-    }, [agentKey, setAgents]);
+    }, [agentKey]);
 
     if (isEditing) {
       return (
@@ -710,7 +690,7 @@ const BotSetting_menu = () => {
         newDescriptions[doc.id] = doc.description || '';
       });
       setLocalDescriptions(newDescriptions);
-    }, [documents]);
+    }, [documents]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // 로컬 문서 설명 업데이트 함수
     const updateLocalDescription = (docId, description) => {
@@ -736,7 +716,7 @@ const BotSetting_menu = () => {
         };
       });
       setLocalRelationships(newRelationships);
-    }, [relationships]);
+    }, [relationships]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // 로컬 관계 정보 업데이트 함수
     const updateLocalRelationship = (id, field, value) => {

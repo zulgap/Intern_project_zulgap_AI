@@ -61,19 +61,6 @@ const WorkflowBuilder = () => {
     end: { icon: CheckCircle, color: 'bg-red-500', name: '완료' }
   };
 
-  // 템플릿
-  const templates = [
-    {
-      name: '카페 창업 프로세스',
-      description: '아이디어부터 오픈까지 전체 과정',
-      nodes: [
-        { type: 'start', title: '창업 아이디어 검증' },
-        { type: 'agent', title: '시장 조사', agent: 'research' },
-        { type: 'end', title: '카페 오픈' }
-      ]
-    }
-  ];
-
   // 연결선 추가
   const addConnection = (fromNodeId, toNodeId) => {
     const existingConnection = connections.find(
@@ -88,11 +75,6 @@ const WorkflowBuilder = () => {
       };
       setConnections(prev => [...prev, newConnection]);
     }
-  };
-
-  // 연결선 삭제
-  const deleteConnection = (connectionId) => {
-    setConnections(prev => prev.filter(conn => conn.id !== connectionId));
   };
 
   // 연결 모드 시작
