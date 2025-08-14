@@ -26,12 +26,7 @@ const WorkflowBuilder = () => {
   
   const [connections, setConnections] = useState([]);
   const [selectedNode, setSelectedNode] = useState(null);
-  const [isExecuting, setIsExecuting] = useState(false);
-  const [currentStep, setCurrentStep] = useState(1);
-  const [savedWorkflows, setSavedWorkflows] = useState([]);
-  const [currentWorkflowName, setCurrentWorkflowName] = useState('');
-  const [showSaveDialog, setShowSaveDialog] = useState(false);
-  const [showLoadDialog, setShowLoadDialog] = useState(false);
+  const [isExecuting] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [connectionStart, setConnectionStart] = useState(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
