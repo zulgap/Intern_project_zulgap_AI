@@ -1,7 +1,7 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import LoginPage from "./pages/LoginPage";
-import WorkflowPage from "./components/WorkflowBuilder";
+import WorkflowPage from "./menues/Workflow_menu";
 import ChatTestPage from "./tests/ChatTestPage";
 import ChatPage from "./menues/Chat_menu";
 import HomePage from "./pages/HomePage";
