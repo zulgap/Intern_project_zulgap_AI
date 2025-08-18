@@ -24,7 +24,7 @@ const Sidebar = () => {
     } else if (path === '/workflow') {
       setActiveCategory('워크 플로우');
     } else if (path === '/botsetting') {
-      setActiveCategory('봇 설정');
+      setActiveCategory('에이전트 설정');
     }
   }, [location.pathname]);
 
@@ -45,7 +45,7 @@ const Sidebar = () => {
       case '워크 플로우':
         navigate('/workflow');
         break;
-      case '봇 설정':
+      case '에이전트 설정':
         navigate('/botsetting');
         break;
       default:
@@ -98,7 +98,7 @@ const Sidebar = () => {
     { id: 'agent-chat', name: '채팅', icon: MessageSquareIcon },
     { id: 'client-management', name: '동료사 관리', icon: UsersIcon },
     { id: 'work-flow', name: '워크 플로우', icon: FolderIcon },
-    { id: 'agent-creation', name: '봇 설정', icon: SettingsIcon }
+    { id: 'agent-creation', name: '에이전트 설정', icon: SettingsIcon }
   
   ];
 
@@ -114,8 +114,8 @@ const Sidebar = () => {
       { name: '데이터 처리', time: '오늘', active: false },
       { name: '보고서 생성', time: '어제', active: false }
     ],
-    '봇 설정': [
-      { name: '새 봇 설정', time: '진행 중', active: false }
+    '에이전트 설정': [
+      { name: '새 에이전트 설정', time: '진행 중', active: false }
     ],
     '동료사 관리': [
       { name: '클라이언트 A', time: '활성', active: false },
@@ -128,7 +128,7 @@ const Sidebar = () => {
     if (activeCategory === '채팅') return <ChatSidebarContent />;
     if (activeCategory === '동료사 관리') return <PartnerSidebarContent />;
     if (activeCategory === '워크 플로우') return <WorkflowSidebarContent />;
-    if (activeCategory === '봇 설정') return <BotSettingsSidebarContent />;
+    if (activeCategory === '에이전트 설정') return <BotSettingsSidebarContent />;
     return null;
   };
 

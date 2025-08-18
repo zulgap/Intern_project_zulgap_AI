@@ -71,7 +71,7 @@ const BotSetting_menu = () => {
       setTimeout(() => setSuccess(null), 3000);
     } else {
       setError(message);
-      setTimeout(() => setError(null), 5000);
+      setTimeout(() => setError(null), 6000); // 에러 메시지는 6초간 표시
     }
   };
 
@@ -146,6 +146,15 @@ const BotSetting_menu = () => {
   // 에이전트 저장 (목업)
   const handleSaveAgent = async (agentKey, updatedAgent) => {
     try {
+      // 프롬프트 유효성 검사
+      const defaultPrompt = '새로 생성된 AI 에이전트입니다. 역할을 정의해주세요.';
+      const prompt = updatedAgent.prompt?.trim();
+      
+      if (!prompt || prompt === defaultPrompt) {
+        showMessage('시스템 프롬프트를 입력해주세요. AI 에이전트가 어떤 역할을 수행할지 구체적으로 작성해야 합니다.', 'error');
+        return;
+      }
+      
       setSaving(true);
       
       // 목업 저장 처리
@@ -171,9 +180,6 @@ const BotSetting_menu = () => {
       name: '새로운 에이전트',
       avatar: '🤖',
       color: 'bg-gray-500',
-      personality: 'balanced',
-      responseLength: 'medium',
-      expertise: ['범용 업무'],
       prompt: '새로 생성된 AI 에이전트입니다. 역할을 정의해주세요.',
       randomness: 0.7,
       // API 설정 (단일 키 공유)
@@ -197,24 +203,29 @@ const BotSetting_menu = () => {
 
   // 에이전트 삭제
   const deleteAgent = (agentKey) => {
-    setAgents(prev => {
-      const newAgents = { ...prev };
-      delete newAgents[agentKey];
-      return newAgents;
-    });
+    const agent = agents[agentKey];
+    const agentName = agent?.name || '이름 없는 에이전트';
     
-    // 매핑에서도 제거
-    setAgentDocumentMappings(prev => {
-      const newMappings = { ...prev };
-      delete newMappings[agentKey];
-      return newMappings;
-    });
-    
-    if (editingAgent === agentKey) {
-      setEditingAgent(null);
+    if (window.confirm(`정말로 "${agentName}" 에이전트를 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.`)) {
+      setAgents(prev => {
+        const newAgents = { ...prev };
+        delete newAgents[agentKey];
+        return newAgents;
+      });
+      
+      // 매핑에서도 제거
+      setAgentDocumentMappings(prev => {
+        const newMappings = { ...prev };
+        delete newMappings[agentKey];
+        return newMappings;
+      });
+      
+      if (editingAgent === agentKey) {
+        setEditingAgent(null);
+      }
+      
+      showMessage(`"${agentName}" 에이전트가 삭제되었습니다.`);
     }
-    
-    showMessage('에이전트가 삭제되었습니다.');
   };
 
   // 에이전트-문서 매핑 업데이트 (목업)
@@ -229,6 +240,22 @@ const BotSetting_menu = () => {
   // 전체 저장 (목업)
   const handleSaveAll = async () => {
     try {
+      // 모든 에이전트의 프롬프트 유효성 검사
+      const defaultPrompt = '새로 생성된 AI 에이전트입니다. 역할을 정의해주세요.';
+      const invalidAgents = [];
+      
+      Object.entries(agents).forEach(([agentKey, agent]) => {
+        const prompt = agent.prompt?.trim();
+        if (!prompt || prompt === defaultPrompt || prompt.length < 0) {
+          invalidAgents.push(agent.name || '이름 없는 에이전트');
+        }
+      });
+      
+      if (invalidAgents.length > 0) {
+        showMessage(`다음 에이전트들의 시스템 프롬프트를 확인해주세요: ${invalidAgents.join(', ')}. 각 에이전트의 역할과 행동 방식을 구체적으로 작성해야 합니다.`, 'error');
+        return;
+      }
+      
       setSaving(true);
       
       // 목업 저장 처리
@@ -259,20 +286,6 @@ const BotSetting_menu = () => {
     setDragOver(false);
   };
 
-  const personalityOptions = {
-    conservative: { name: '보수적', description: '신중하고 안정적인 접근' },
-    balanced: { name: '균형적', description: '현실적이고 실용적인 접근' },
-    innovative: { name: '혁신적', description: '창의적이고 도전적인 접근' },
-    creative: { name: '창의적', description: '독창적이고 유연한 사고' },
-    analytical: { name: '분석적', description: '데이터 기반의 논리적 접근' }
-  };
-
-  const responseLengthOptions = {
-    brief: { name: '간결함', description: '핵심만 간단히' },
-    medium: { name: '적정함', description: '필요한 내용을 적절히' },
-    detailed: { name: '상세함', description: '구체적이고 자세하게' }
-  };
-
   const relationshipTypes = {
     'concept-example': { name: '개념-예시', description: '한 문서는 개념을 설명하고, 다른 문서는 구체적인 예시를 제공' },
     'prerequisite': { name: '선행-후행', description: '한 문서를 먼저 이해해야 다른 문서를 이해할 수 있음' },
@@ -286,41 +299,9 @@ const BotSetting_menu = () => {
     return documents.find(doc => doc.id === id);
   };
 
-  // 성격과 답변 스타일에 따른 프롬프트 보강 함수
+  // 프롬프트 보강 함수
   const generateEnhancedPrompt = (agent) => {
-    const personalityPrompts = {
-      conservative: "신중하고 안정적인 접근을 취하며, 검증된 정보와 기존의 모범 사례를 중시합니다. 리스크를 최소화하고 단계적인 해결책을 제시합니다.",
-      balanced: "현실적이고 실용적인 관점에서 균형 잡힌 답변을 제공합니다. 다양한 관점을 고려하며 상황에 맞는 최적의 해결책을 찾습니다.",
-      innovative: "창의적이고 도전적인 접근을 통해 새로운 아이디어와 혁신적인 해결책을 제시합니다. 기존 관습에 얽매이지 않고 참신한 관점을 제공합니다.",
-      creative: "독창적이고 유연한 사고로 창의적인 아이디어를 생성합니다. 상상력을 발휘하여 예술적이고 혁신적인 접근법을 제안합니다.",
-      analytical: "데이터와 논리에 기반한 체계적인 분석을 통해 객관적이고 정확한 답변을 제공합니다. 근거를 명확히 제시하며 논리적 추론을 중시합니다."
-    };
-
-    const responseStylePrompts = {
-      brief: "핵심 내용만을 간결하고 명확하게 전달합니다. 불필요한 설명은 생략하고 요점만 정리하여 답변합니다.",
-      medium: "필요한 내용을 적절한 수준으로 설명합니다. 중요한 배경 정보와 구체적인 예시를 포함하여 이해하기 쉽게 답변합니다.",
-      detailed: "주제에 대해 포괄적이고 상세한 설명을 제공합니다. 관련 배경, 세부 사항, 다양한 예시, 추가 고려사항까지 포함하여 깊이 있게 답변합니다."
-    };
-
-    const basePrompt = agent.prompt || '';
-    const personalityAddition = personalityPrompts[agent.personality] || '';
-    const styleAddition = responseStylePrompts[agent.responseLength] || '';
-
-    let enhancedPrompt = basePrompt;
-    
-    if (personalityAddition) {
-      enhancedPrompt += `\n\n[성격 특성]\n${personalityAddition}`;
-    }
-    
-    if (styleAddition) {
-      enhancedPrompt += `\n\n[답변 스타일]\n${styleAddition}`;
-    }
-
-    if (agent.expertise && agent.expertise.length > 0) {
-      enhancedPrompt += `\n\n[전문 분야]\n당신은 ${agent.expertise.join(', ')} 분야의 전문가입니다.`;
-    }
-
-    return enhancedPrompt.trim();
+    return agent.prompt || '';
   };
 
   // 메시지 컴포넌트
@@ -389,70 +370,26 @@ const BotSetting_menu = () => {
               </div>
             </div>
 
-            {/* 성격 설정 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">성격 유형</label>
-              <div className="grid grid-cols-2 gap-2">
-                {Object.entries(personalityOptions).map(([key, option]) => (
-                  <button
-                    key={key}
-                    onClick={() => updateAgent({ ...agent, personality: key })}
-                    className={`p-3 rounded-lg border text-left transition-colors ${
-                      agent.personality === key
-                        ? 'border-blue-500 bg-blue-50 text-blue-700'
-                        : 'border-gray-200 hover:bg-gray-50'
-                    }`}
-                  >
-                    <div className="font-medium text-sm">{option.name}</div>
-                    <div className="text-xs text-gray-600">{option.description}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* 답변 길이 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">답변 스타일</label>
-              <div className="flex space-x-2">
-                {Object.entries(responseLengthOptions).map(([key, option]) => (
-                  <button
-                    key={key}
-                    onClick={() => updateAgent({ ...agent, responseLength: key })}
-                    className={`flex-1 p-3 rounded-lg border text-center transition-colors ${
-                      agent.responseLength === key
-                        ? 'border-blue-500 bg-blue-50 text-blue-700'
-                        : 'border-gray-200 hover:bg-gray-50'
-                    }`}
-                  >
-                    <div className="font-medium text-sm">{option.name}</div>
-                    <div className="text-xs text-gray-600">{option.description}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* 전문 분야 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">전문 분야</label>
-              <div className="flex flex-wrap gap-2">
-                {agent.expertise?.map((skill, index) => (
-                  <span
-                    key={index}
-                    className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm"
-                  >
-                    {skill}
-                  </span>
-                ))}
-              </div>
-            </div>
-
             {/* 프롬프트 편집 */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">시스템 프롬프트</label>
               <textarea
                 defaultValue={agent.prompt || ''}
-                onBlur={(e) => updateAgent({ ...agent, prompt: e.target.value })}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                onFocus={(e) => {
+                  const defaultPrompt = '새로 생성된 AI 에이전트입니다. 역할을 정의해주세요.';
+                  if (e.target.value === defaultPrompt) {
+                    e.target.value = '';
+                    e.target.placeholder = '';
+                  }
+                }}
+                onBlur={(e) => {
+                  updateAgent({ ...agent, prompt: e.target.value });
+                }}
+                className={`w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 ${
+                  agent.prompt === '새로 생성된 AI 에이전트입니다. 역할을 정의해주세요.' || !agent.prompt 
+                    ? 'text-gray-400' 
+                    : 'text-gray-700'
+                }`}
                 rows="4"
                 placeholder="이 에이전트의 역할과 행동 방식을 정의하세요..."
               />
@@ -544,22 +481,17 @@ const BotSetting_menu = () => {
               </div>
             </div>
 
-            {/* 강화된 프롬프트 미리보기 */}
-            <div className="bg-amber-50 rounded-lg p-4 border border-amber-200">
-              <h4 className="text-sm font-semibold text-amber-800 mb-3 flex items-center">
-                <span className="mr-2">🔍</span>
-                실제 AI 프롬프트 미리보기
-              </h4>
-              <div className="bg-white rounded-lg p-3 border border-amber-200 max-h-48 overflow-y-auto">
-                <pre className="text-xs text-gray-700 whitespace-pre-wrap font-mono">
-                  {generateEnhancedPrompt(agent)}
-                </pre>
-              </div>
-              <p className="text-xs text-amber-700 mt-2">
-                위 내용이 실제로 AI에게 전달되는 최종 시스템 프롬프트입니다. 
-                성격 유형, 답변 스타일, 전문 분야가 모두 반영됩니다.
-              </p>
+            {/* 위험 구역 - 에이전트 삭제 */}
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <button
+                onClick={() => deleteAgent(agentKey)}
+                className="px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition-colors flex items-center space-x-2"
+              >
+                <Trash2 size={16} />
+                <span>에이전트 삭제</span>
+              </button>
             </div>
+
           </div>
         </div>
       );
@@ -583,23 +515,19 @@ const BotSetting_menu = () => {
                 className="text-xl font-bold text-gray-900 bg-transparent border-b-2 border-transparent hover:border-gray-300 focus:border-blue-500 focus:outline-none transition-colors w-full mb-2"
                 placeholder="에이전트 이름을 입력하세요"
               />
-              <div className="flex items-center space-x-2">
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  agent.personality === 'conservative' ? 'bg-blue-100 text-blue-700' :
-                  agent.personality === 'innovative' ? 'bg-green-100 text-green-700' :
-                  agent.personality === 'creative' ? 'bg-purple-100 text-purple-700' :
-                  agent.personality === 'analytical' ? 'bg-indigo-100 text-indigo-700' :
-                  'bg-gray-100 text-gray-700'
-                }`}>
-                  {personalityOptions[agent.personality]?.name}
-                </span>
-                <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">
-                  {responseLengthOptions[agent.responseLength]?.name}
-                </span>
-              </div>
             </div>
           </div>
           <div className="flex space-x-2">
+            {/* 저장 버튼 */}
+            <button
+              onClick={() => handleSaveAgent(agentKey, agent)}
+              disabled={saving}
+              className="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              title="에이전트 저장"
+            >
+              {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+            </button>
+            
             <button
               onClick={() => setEditingAgent(agentKey)}
               className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
@@ -607,30 +535,6 @@ const BotSetting_menu = () => {
             >
               <Settings size={18} />
             </button>
-            
-            {/* 삭제 버튼 (모든 에이전트 삭제 가능) */}
-            <button
-              onClick={() => deleteAgent(agentKey)}
-              className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-              title="에이전트 삭제"
-            >
-              <Trash2 size={18} />
-            </button>
-          </div>
-        </div>
-
-        {/* 전문 분야 */}
-        <div className="mb-4">
-          <div className="text-sm font-medium text-gray-700 mb-2">전문 분야</div>
-          <div className="flex flex-wrap gap-2">
-            {agent.expertise?.map((skill, index) => (
-              <span
-                key={index}
-                className="px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs"
-              >
-                {skill}
-              </span>
-            ))}
           </div>
         </div>
 
@@ -639,8 +543,21 @@ const BotSetting_menu = () => {
           <div className="text-sm font-medium text-gray-700 mb-2">시스템 프롬프트</div>
           <textarea
             defaultValue={agent.prompt || ''}
-            onBlur={(e) => updateAgent({ ...agent, prompt: e.target.value })}
-            className="w-full p-3 text-sm text-gray-700 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:bg-white transition-colors resize-none"
+            onFocus={(e) => {
+              const defaultPrompt = '새로 생성된 AI 에이전트입니다. 역할을 정의해주세요.';
+              if (e.target.value === defaultPrompt) {
+                e.target.value = '';
+                e.target.placeholder = '';
+              }
+            }}
+            onBlur={(e) => {
+              updateAgent({ ...agent, prompt: e.target.value });
+            }}
+            className={`w-full p-3 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:bg-white transition-colors resize-none ${
+              agent.prompt === '새로 생성된 AI 에이전트입니다. 역할을 정의해주세요.' || !agent.prompt 
+                ? 'text-gray-400' 
+                : 'text-gray-700'
+            }`}
             rows="4"
             placeholder="이 에이전트의 역할과 행동 방식을 정의하세요..."
           />
@@ -1256,41 +1173,9 @@ export const callOpenAIAPI = async (agentConfig, userMessage) => {
   // 환경변수에서 API 키 가져오기 (단일 키 사용)
   const apiKey = process.env.REACT_APP_OPENAI_API_KEY;
   
-  // 성격과 스타일이 반영된 강화 프롬프트 생성
+  // 강화 프롬프트 생성
   const generateEnhancedPrompt = (agent) => {
-    const personalityPrompts = {
-      conservative: "신중하고 안정적인 접근을 취하며, 검증된 정보와 기존의 모범 사례를 중시합니다. 리스크를 최소화하고 단계적인 해결책을 제시합니다.",
-      balanced: "현실적이고 실용적인 관점에서 균형 잡힌 답변을 제공합니다. 다양한 관점을 고려하며 상황에 맞는 최적의 해결책을 찾습니다.",
-      innovative: "창의적이고 도전적인 접근을 통해 새로운 아이디어와 혁신적인 해결책을 제시합니다. 기존 관습에 얽매이지 않고 참신한 관점을 제공합니다.",
-      creative: "독창적이고 유연한 사고로 창의적인 아이디어를 생성합니다. 상상력을 발휘하여 예술적이고 혁신적인 접근법을 제안합니다.",
-      analytical: "데이터와 논리에 기반한 체계적인 분석을 통해 객관적이고 정확한 답변을 제공합니다. 근거를 명확히 제시하며 논리적 추론을 중시합니다."
-    };
-
-    const responseStylePrompts = {
-      brief: "핵심 내용만을 간결하고 명확하게 전달합니다. 불필요한 설명은 생략하고 요점만 정리하여 답변합니다.",
-      medium: "필요한 내용을 적절한 수준으로 설명합니다. 중요한 배경 정보와 구체적인 예시를 포함하여 이해하기 쉽게 답변합니다.",
-      detailed: "주제에 대해 포괄적이고 상세한 설명을 제공합니다. 관련 배경, 세부 사항, 다양한 예시, 추가 고려사항까지 포함하여 깊이 있게 답변합니다."
-    };
-
-    const basePrompt = agent.prompt || '';
-    const personalityAddition = personalityPrompts[agent.personality] || '';
-    const styleAddition = responseStylePrompts[agent.responseLength] || '';
-
-    let enhancedPrompt = basePrompt;
-    
-    if (personalityAddition) {
-      enhancedPrompt += `\n\n[성격 특성]\n${personalityAddition}`;
-    }
-    
-    if (styleAddition) {
-      enhancedPrompt += `\n\n[답변 스타일]\n${styleAddition}`;
-    }
-
-    if (agent.expertise && agent.expertise.length > 0) {
-      enhancedPrompt += `\n\n[전문 분야]\n당신은 ${agent.expertise.join(', ')} 분야의 전문가입니다.`;
-    }
-
-    return enhancedPrompt.trim();
+    return agent.prompt || '';
   };
 
   const enhancedPrompt = generateEnhancedPrompt(agentConfig);
