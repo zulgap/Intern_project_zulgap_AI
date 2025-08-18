@@ -25,8 +25,12 @@ const WorkflowBuilder = () => {
   ]);
   
   const [connections, setConnections] = useState([]);
+  // 워크플로우 실행 중 여부 (기본값: false)
+  const [isExecuting, setIsExecuting] = useState(false);
   const [selectedNode, setSelectedNode] = useState(null);
-  const [isExecuting] = useState(false);
+  const [currentWorkflowName, setCurrentWorkflowName] = useState('');
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [showLoadDialog, setShowLoadDialog] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [connectionStart, setConnectionStart] = useState(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
@@ -144,7 +148,7 @@ const WorkflowBuilder = () => {
   }, [isDragging, handleMouseMove, handleMouseUp]);
 
   // 노드 추가
-  const addNode = (type) => {
+  function addNode(type) {
     const newNode = {
       id: Date.now(),
       type,
@@ -153,9 +157,8 @@ const WorkflowBuilder = () => {
       status: 'pending',
       config: type === 'agent' ? { agent: 'business' } : {}
     };
-    
     setNodes(prev => [...prev, newNode]);
-  };
+  }
 
   // 노드 삭제
   const deleteNode = (nodeId) => {
