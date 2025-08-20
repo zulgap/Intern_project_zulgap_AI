@@ -136,7 +136,7 @@ const AgentCard = React.memo(function AgentCard({
       </div>
       <div className="mb-4">
         <div className="text-sm font-medium text-gray-700 mb-2">시스템 프롬프트</div>
-        <textarea value={agent.prompt || ''} readOnly className="w-full p-3 text-sm text-gray-700 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:bg-white transition-colors resize-none" rows="4" placeholder="이 에이전트의 역할과 행동 방식을 정의하세요..." />
+        <textarea value={agent.prompt || ''} disabled className="w-full p-3 text-sm text-gray-700 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:bg-white transition-colors resize-none" rows="4" placeholder="이 에이전트의 역할과 행동 방식을 정의하세요..." />
       </div>
       <div>
         <div className="flex items-center justify-between mb-2">
@@ -144,7 +144,7 @@ const AgentCard = React.memo(function AgentCard({
           <span className="text-sm font-semibold text-blue-600">{(agent.randomness || 0.7).toFixed(1)}</span>
         </div>
         <div className="mb-2">
-          <input type="range" min="0" max="1" step="0.1" value={agent.randomness || 0.7} readOnly className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-not-allowed" style={{ background: `linear-gradient(to right, #3B82F6 0%, #3B82F6 ${(agent.randomness || 0.7) * 100}%, #E5E7EB ${(agent.randomness || 0.7) * 100}%, #E5E7EB 100%)` }} />
+          <input type="range" min="0" max="1" step="0.1" value={agent.randomness || 0.7} disabled className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-not-allowed" style={{ background: `linear-gradient(to right, #3B82F6 0%, #3B82F6 ${(agent.randomness || 0.7) * 100}%, #E5E7EB ${(agent.randomness || 0.7) * 100}%, #E5E7EB 100%)` }} />
         </div>
         <div className="flex justify-between text-xs text-gray-500"><span>보수적</span><span>균형적</span><span>창의적</span></div>
       </div>

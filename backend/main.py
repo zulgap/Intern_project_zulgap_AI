@@ -4,8 +4,11 @@ Flask 기반 API 서버로 React 프론트엔드와 연동
 """
 
 from flask import Flask, send_from_directory, jsonify, request
+# bot_db.py에서 CRUD 함수 임포트
+import sys, os
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))  # backend/ 경로 추가
+import bot_db
 from dotenv import load_dotenv
-import os
 from openai import OpenAI
 
 # 환경 변수 로드
@@ -22,10 +25,134 @@ build_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file
 app = Flask(__name__, static_folder=build_path, static_url_path='')
 app.config['JSON_AS_ASCII'] = False  # 한글 지원
 
+# DB 테이블 초기화 (없으면 자동 생성)
+try:
+    bot_db.init_db()
+    print("DB init success")
+except Exception as e:
+    print("DB init error:", e)
+
 
 # =============================================================================
 # API 엔드포인트
 # =============================================================================
+
+# -----------------------------------------------------------------------------
+# [1] 봇(에이전트) CRUD API 엔드포인트
+# -----------------------------------------------------------------------------
+
+@app.route('/api/bots', methods=['GET'])
+def get_all_bots_api():
+    """
+    모든 봇(에이전트) 목록을 조회하는 API
+    프론트엔드에서 봇 리스트를 불러올 때 사용
+    """
+    try:
+        bots = bot_db.get_all_bots()
+        return jsonify({'bots': bots})
+    except Exception as e:
+        return jsonify({'error': f'봇 목록 조회 중 오류: {str(e)}'}), 500
+
+
+@app.route('/api/bots/<int:bot_id>', methods=['GET'])
+def get_bot_by_id_api(bot_id):
+    """
+    특정 봇(에이전트) 정보를 ID로 조회하는 API
+    """
+    try:
+        bot = bot_db.get_bot_by_id(bot_id)
+        if bot:
+            return jsonify({'bot': bot})
+        else:
+            return jsonify({'error': '해당 ID의 봇을 찾을 수 없습니다.'}), 404
+    except Exception as e:
+        return jsonify({'error': f'봇 조회 중 오류: {str(e)}'}), 500
+
+
+@app.route('/api/bots', methods=['POST'])
+def create_bot_api():
+    """
+    새로운 봇(에이전트)을 생성하는 API
+    프론트엔드에서 봇 추가 시 사용
+    """
+    try:
+        data = request.get_json() or {}
+
+        # 필수 필드 확인
+        name = data.get('name')
+        prompt = data.get('prompt')
+        if not name or not prompt:
+            return jsonify({'error': 'name과 prompt는 필수입니다.'}), 400
+
+        # bot_db.create_bot()은 '딕셔너리' 1개를 받습니다.
+        new_bot = {
+            'name': name,
+            'avatar': data.get('avatar'),
+            'color': data.get('color'),
+            'personality': data.get('personality'),
+            'response_length': data.get('response_length'),
+            'expertise': data.get('expertise') or [],
+            'prompt': prompt,
+            'randomness': data.get('randomness'),
+            'api_config': data.get('api_config')
+        }
+
+        bot_id = bot_db.create_bot(new_bot)
+        return jsonify({'id': bot_id, 'message': '봇이 성공적으로 생성되었습니다.'}), 201
+
+    except Exception as e:
+        return jsonify({'error': f'봇 생성 중 오류: {str(e)}'}), 500
+    
+
+@app.route('/api/bots/<int:bot_id>', methods=['PUT'])
+def update_bot_api(bot_id):
+    """
+    기존 봇(에이전트) 정보를 수정하는 API
+    프론트엔드에서 봇 정보 수정 시 사용
+    """
+    try:
+        data = request.get_json() or {}
+
+        name = data.get('name')
+        prompt = data.get('prompt')
+        if not name or not prompt:
+            return jsonify({'error': 'name과 prompt는 필수입니다.'}), 400
+
+        updated_bot = {
+            'name': name,
+            'avatar': data.get('avatar'),
+            'color': data.get('color'),
+            'personality': data.get('personality'),
+            'response_length': data.get('response_length'),
+            'expertise': data.get('expertise') or [],
+            'prompt': prompt,
+            'randomness': data.get('randomness'),
+            'api_config': data.get('api_config')
+        }
+
+        # bot_db.update_bot는 반환값이 없습니다. 호출만 해도 업데이트 수행.
+        bot_db.update_bot(bot_id, updated_bot)
+        return jsonify({'message': '봇 정보가 성공적으로 수정되었습니다.'})
+
+    except Exception as e:
+        return jsonify({'error': f'봇 수정 중 오류: {str(e)}'}), 500
+
+
+
+@app.route('/api/bots/<int:bot_id>', methods=['DELETE'])
+def delete_bot_api(bot_id):
+    """
+    기존 봇(에이전트)을 삭제하는 API
+    프론트엔드에서 봇 삭제 시 사용
+    """
+    try:
+        deleted = bot_db.delete_bot(bot_id)
+        if deleted:
+            return jsonify({'message': '봇이 성공적으로 삭제되었습니다.'})
+        else:
+            return jsonify({'error': '해당 ID의 봇을 찾을 수 없습니다.'}), 404
+    except Exception as e:
+        return jsonify({'error': f'봇 삭제 중 오류: {str(e)}'}), 500
 
 @app.route('/api/health')
 def health_check():

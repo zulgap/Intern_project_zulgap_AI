@@ -1,45 +1,23 @@
 import React, { useState, useEffect, useCallback } from 'react';
-// Lucide icon imports removed. Use only inline SVGs for icons as per project rules.
-
-
-import AgentCard from './AgentCard';
+import { 
+  Bot, 
+  Save,
+  RefreshCw,
+  Settings,
+  User,
+  FileText,
+  Check,
+  X,
+  Upload,
+  File,
+  Trash2,
+  Plus,
+  ArrowRight,
+  Loader2,
+  AlertCircle,
+  CheckCircle
+} from 'lucide-react';
 import Sidebar from '../components/Sidebar';
-
-
-// ====== 인라인 SVG 아이콘 컴포넌트 및 더미 함수/변수 정의 (실제 로직 필요시 구현) ======
-const Loader2 = () => (<svg className="animate-spin" width="24" height="24" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="#3B82F6" strokeWidth="4" strokeDasharray="60" strokeDashoffset="20"/></svg>);
-const Upload = () => (<svg width="24" height="24" fill="none" viewBox="0 0 24 24"><path d="M12 16V4M12 4l-5 5M12 4l5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="M20 16v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>);
-const File = () => (<svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M4 4v16h16V8l-6-4H4z" stroke="currentColor" strokeWidth="2"/></svg>);
-const Trash2 = () => (<svg width="16" height="16" fill="none" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14Z" stroke="currentColor" strokeWidth="2"/></svg>);
-const Plus = () => (<svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>);
-const ArrowRight = () => (<svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>);
-const User = () => (<svg width="16" height="16" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="2"/><path d="M4 20v-1a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v1" stroke="currentColor" strokeWidth="2"/></svg>);
-const FileText = () => (<svg width="16" height="16" fill="none" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2" stroke="currentColor" strokeWidth="2"/><path d="M8 8h8M8 12h8M8 16h4" stroke="currentColor" strokeWidth="2"/></svg>);
-const RefreshCw = () => (<svg width="16" height="16" fill="none" viewBox="0 0 24 24"><path d="M23 4v6h-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="M1 20v-6h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="M3.51 9a9 9 0 0 1 14.13-3.36L23 10M1 14l5.36 5.36A9 9 0 0 0 20.49 15" stroke="currentColor" strokeWidth="2"/></svg>);
-const Save = () => (<svg width="16" height="16" fill="none" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z" stroke="currentColor" strokeWidth="2"/><path d="M17 21v-8H7v8" stroke="currentColor" strokeWidth="2"/><path d="M7 3v5h8" stroke="currentColor" strokeWidth="2"/></svg>);
-const Bot = () => (<svg width="48" height="48" fill="none" viewBox="0 0 48 48"><rect x="8" y="16" width="32" height="24" rx="8" stroke="currentColor" strokeWidth="2"/><circle cx="16" cy="28" r="2" fill="currentColor"/><circle cx="32" cy="28" r="2" fill="currentColor"/><rect x="20" y="36" width="8" height="4" rx="2" fill="currentColor"/></svg>);
-const Check = () => (<svg width="12" height="12" fill="none" viewBox="0 0 16 16"><path d="M4 8.5l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>);
-
-const updateDocumentDescription = () => {};
-const updateRelationship = () => {};
-const handleDrop = () => {};
-const handleDragOver = () => {};
-const handleDragLeave = () => {};
-const deleteDocument = () => {};
-const addRelationship = () => {};
-const getDocumentById = () => {};
-const deleteRelationship = () => {};
-const relationshipTypes = { example: { name: '예시', description: '예시 설명' } };
-const updateAgentDocumentMapping = () => {};
-const loadInitialData = () => {};
-const handleSaveAll = () => {};
-const addNewAgent = () => {};
-const handleSaveAgent = () => {};
-const deleteAgent = () => {};
-const responseLengthOptions = { brief: { name: '간결', description: '짧고 명확' }, medium: { name: '중간', description: '적당한 길이' }, detailed: { name: '상세', description: '자세하고 풍부' } };
-const generateEnhancedPrompt = () => '';
-const MessageBanner = () => null;
-
 
 const BotSetting_menu = () => {
   const [activeTab, setActiveTab] = useState('basic');
@@ -53,34 +31,38 @@ const BotSetting_menu = () => {
 
   const [documents, setDocuments] = useState([]);
   const [relationships, setRelationships] = useState([]);
-  // 에이전트 목록을 배열로 관리 (DB 연동)
-  const [agents, setAgents] = useState([]); // [{id, name, ...}]
+  const [agents, setAgents] = useState({
+    // 빈 상태로 시작 - 사용자가 직접 생성한 에이전트들만 표시
+  });
   const [agentDocumentMappings, setAgentDocumentMappings] = useState({});
 
-
-  // 컴포넌트가 처음 마운트될 때 DB에서 에이전트 목록을 불러옴
-  useEffect(() => {
-    fetchAgents();
-  }, []);
-
-  // 실제 DB에서 에이전트 목록을 불러오는 함수
-  async function fetchAgents() {
+  // 초기 데이터 로드 (목업 데이터 사용)
+  const loadInitialData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const res = await fetch('/api/bots');
-      const data = await res.json();
-      if (data.bots) {
-        setAgents(data.bots); // 배열로 저장
-      } else {
-        setAgents([]);
-      }
+
+      // 목업 데이터로 대체
+      await new Promise(resolve => setTimeout(resolve, 500)); // 로딩 시뮬레이션
+      
+      // 에이전트는 이미 초기값으로 설정됨
+      // 문서와 관계는 빈 배열로 시작
+      setDocuments([]);
+      setRelationships([]);
+      setAgentDocumentMappings({});
+      
+      showMessage('설정이 로드되었습니다.');
     } catch (err) {
-      setError('에이전트 목록을 불러오지 못했습니다.');
+      setError(err.message);
     } finally {
       setLoading(false);
     }
-  }
+  }, []); // useCallback 종료
+
+  // 초기 데이터 로드
+  useEffect(() => {
+    loadInitialData();
+  }, [loadInitialData]);
 
   // 에러/성공 메시지 표시
   const showMessage = (message, type = 'success') => {
@@ -89,7 +71,7 @@ const BotSetting_menu = () => {
       setTimeout(() => setSuccess(null), 3000);
     } else {
       setError(message);
-      setTimeout(() => setError(null), 5000);
+      setTimeout(() => setError(null), 6000); // 에러 메시지는 6초간 표시
     }
   };
 
@@ -97,14 +79,521 @@ const BotSetting_menu = () => {
   const handleFileUpload = async (files) => {
     try {
       setUploading(true);
-      // 파일 업로드 로직을 여기에 구현 (현재는 목업)
-      // 예: await uploadFilesToServer(files);
+      
+      // 목업 업로드 처리
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const uploadedDocs = Array.from(files).map((file, index) => ({
+        id: Date.now() + index,
+        name: file.name,
+        size: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
+        uploadDate: new Date().toLocaleDateString('ko-KR'),
+        description: ''
+      }));
+
+      setDocuments(prev => [...prev, ...uploadedDocs]);
+      showMessage(`${uploadedDocs.length}개 파일이 업로드되었습니다.`);
     } catch (err) {
-      setError('파일 업로드 중 오류가 발생했습니다.');
+      showMessage('파일 업로드에 실패했습니다.', 'error');
     } finally {
       setUploading(false);
     }
-  }
+  };
+
+  // 문서 설명 업데이트 (목업)
+  const updateDocumentDescription = async (docId, description) => {
+    setDocuments(prev => prev.map(doc => 
+      doc.id === docId ? { ...doc, description } : doc
+    ));
+  };
+
+  // 문서 삭제 (목업)
+  const deleteDocument = async (docId) => {
+    setDocuments(prev => prev.filter(doc => doc.id !== docId));
+    setRelationships(prev => prev.filter(rel => rel.doc1 !== docId && rel.doc2 !== docId));
+    showMessage('문서가 삭제되었습니다.');
+  };
+
+  // 관계 추가 (목업)
+  const addRelationship = async () => {
+    if (documents.length < 2) return;
+
+    const newRelationship = {
+      id: Date.now(),
+      doc1: documents[0].id,
+      doc2: documents[1].id,
+      relationshipType: 'concept-example',
+      description: ''
+    };
+
+    setRelationships(prev => [...prev, newRelationship]);
+    showMessage('새로운 관계가 추가되었습니다.');
+  };
+
+  // 관계 업데이트 (목업)
+  const updateRelationship = async (id, field, value) => {
+    setRelationships(prev => prev.map(rel => 
+      rel.id === id ? { ...rel, [field]: value } : rel
+    ));
+  };
+
+  // 관계 삭제 (목업)
+  const deleteRelationship = async (id) => {
+    setRelationships(prev => prev.filter(rel => rel.id !== id));
+    showMessage('관계가 삭제되었습니다.');
+  };
+
+  // 에이전트 저장 (목업)
+  const handleSaveAgent = async (agentKey, updatedAgent) => {
+    try {
+      // 프롬프트 유효성 검사
+      const defaultPrompt = '새로 생성된 AI 에이전트입니다. 역할을 정의해주세요.';
+      const prompt = updatedAgent.prompt?.trim();
+      
+      if (!prompt || prompt === defaultPrompt) {
+        showMessage('시스템 프롬프트를 입력해주세요. AI 에이전트가 어떤 역할을 수행할지 구체적으로 작성해야 합니다.', 'error');
+        return;
+      }
+      
+      setSaving(true);
+      
+      // 목업 저장 처리
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      setAgents(prev => ({
+        ...prev,
+        [agentKey]: updatedAgent
+      }));
+      setEditingAgent(null);
+      showMessage('에이전트 설정이 저장되었습니다.');
+    } catch (err) {
+      showMessage('저장에 실패했습니다.', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // 새 에이전트 추가
+  const addNewAgent = () => {
+    const newAgentId = `agent_${Date.now()}`;
+    const newAgent = {
+      name: '새로운 에이전트',
+      avatar: '🤖',
+      color: 'bg-gray-500',
+      prompt: '새로 생성된 AI 에이전트입니다. 역할을 정의해주세요.',
+      randomness: 0.7,
+      // API 설정 (단일 키 공유)
+      apiConfig: {
+        useSharedKey: true,
+        temperature: 0.7,
+        maxTokens: 1500,
+        model: 'gpt-4'
+      }
+    };
+
+    setAgents(prev => ({
+      ...prev,
+      [newAgentId]: newAgent
+    }));
+    
+    // 새 에이전트를 바로 편집 모드로
+    setEditingAgent(newAgentId);
+    showMessage('새로운 에이전트가 추가되었습니다!');
+  };
+
+  // 에이전트 삭제
+  const deleteAgent = (agentKey) => {
+    const agent = agents[agentKey];
+    const agentName = agent?.name || '이름 없는 에이전트';
+    
+    if (window.confirm(`정말로 "${agentName}" 에이전트를 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.`)) {
+      setAgents(prev => {
+        const newAgents = { ...prev };
+        delete newAgents[agentKey];
+        return newAgents;
+      });
+      
+      // 매핑에서도 제거
+      setAgentDocumentMappings(prev => {
+        const newMappings = { ...prev };
+        delete newMappings[agentKey];
+        return newMappings;
+      });
+      
+      if (editingAgent === agentKey) {
+        setEditingAgent(null);
+      }
+      
+      showMessage(`"${agentName}" 에이전트가 삭제되었습니다.`);
+    }
+  };
+
+  // 에이전트-문서 매핑 업데이트 (목업)
+  const updateAgentDocumentMapping = async (agentKey, documentIds) => {
+    setAgentDocumentMappings(prev => ({
+      ...prev,
+      [agentKey]: documentIds
+    }));
+    showMessage('에이전트-문서 매핑이 업데이트되었습니다.');
+  };
+
+  // 전체 저장 (목업)
+  const handleSaveAll = async () => {
+    try {
+      // 모든 에이전트의 프롬프트 유효성 검사
+      const defaultPrompt = '새로 생성된 AI 에이전트입니다. 역할을 정의해주세요.';
+      const invalidAgents = [];
+      
+      Object.entries(agents).forEach(([agentKey, agent]) => {
+        const prompt = agent.prompt?.trim();
+        if (!prompt || prompt === defaultPrompt || prompt.length < 0) {
+          invalidAgents.push(agent.name || '이름 없는 에이전트');
+        }
+      });
+      
+      if (invalidAgents.length > 0) {
+        showMessage(`다음 에이전트들의 시스템 프롬프트를 확인해주세요: ${invalidAgents.join(', ')}. 각 에이전트의 역할과 행동 방식을 구체적으로 작성해야 합니다.`, 'error');
+        return;
+      }
+      
+      setSaving(true);
+      
+      // 목업 저장 처리
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      showMessage('모든 설정이 저장되었습니다.');
+    } catch (err) {
+      showMessage('저장에 실패했습니다.', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // 드래그 앤 드롭 처리
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setDragOver(false);
+    const files = e.dataTransfer.files;
+    handleFileUpload(files);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setDragOver(true);
+  };
+
+  const handleDragLeave = () => {
+    setDragOver(false);
+  };
+
+  const relationshipTypes = {
+    'concept-example': { name: '개념-예시', description: '한 문서는 개념을 설명하고, 다른 문서는 구체적인 예시를 제공' },
+    'prerequisite': { name: '선행-후행', description: '한 문서를 먼저 이해해야 다른 문서를 이해할 수 있음' },
+    'complementary': { name: '상호보완', description: '두 문서가 서로 다른 관점에서 같은 주제를 다룸' },
+    'comparison': { name: '비교-대조', description: '두 문서의 내용을 비교하여 차이점을 파악' },
+    'update': { name: '업데이트', description: '한 문서가 다른 문서의 최신 버전이거나 개선 사항' },
+    'reference': { name: '참조', description: '한 문서가 다른 문서를 참고 자료로 활용' }
+  };
+
+  const getDocumentById = (id) => {
+    return documents.find(doc => doc.id === id);
+  };
+
+  // 프롬프트 보강 함수
+  const generateEnhancedPrompt = (agent) => {
+    return agent.prompt || '';
+  };
+
+  // 메시지 컴포넌트
+  const MessageBanner = () => {
+    if (!error && !success) return null;
+
+    return (
+      <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg flex items-center space-x-2 ${
+        error ? 'bg-red-50 border border-red-200 text-red-700' : 'bg-green-50 border border-green-200 text-green-700'
+      }`}>
+        {error ? <AlertCircle size={20} /> : <CheckCircle size={20} />}
+        <span>{error || success}</span>
+        <button 
+          onClick={() => { setError(null); setSuccess(null); }}
+          className="ml-2 text-gray-500 hover:text-gray-700"
+        >
+          <X size={16} />
+        </button>
+      </div>
+    );
+  };
+
+  // 에이전트 카드 컴포넌트
+  const AgentCard = React.memo(({ agentKey, agent }) => {
+    const isEditing = editingAgent === agentKey;
+
+    // 기본 updateAgent 함수
+    const updateAgent = useCallback((updatedAgent) => {
+      setAgents(prev => ({
+        ...prev,
+        [agentKey]: updatedAgent
+      }));
+    }, [agentKey]);
+
+    if (isEditing) {
+      return (
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="space-y-4">
+            {/* 에이전트 헤더 */}
+            <div className="flex items-center space-x-4">
+              <div className={`w-12 h-12 ${agent.color} rounded-xl flex items-center justify-center text-white text-2xl`}>
+                {agent.avatar}
+              </div>
+              <div className="flex-1">
+                <input
+                  type="text"
+                  defaultValue={agent.name || ''}
+                  onBlur={(e) => updateAgent({ ...agent, name: e.target.value })}
+                  className="text-xl font-bold text-gray-900 border-none outline-none bg-transparent border-b-2 border-blue-500 pb-1 w-full"
+                />
+              </div>
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => handleSaveAgent(agentKey, agent)}
+                  disabled={saving}
+                  className="p-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                >
+                  {saving ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
+                </button>
+                <button
+                  onClick={() => setEditingAgent(null)}
+                  className="p-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            </div>
+
+            {/* 프롬프트 편집 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">시스템 프롬프트</label>
+              <textarea
+                defaultValue={agent.prompt || ''}
+                onFocus={(e) => {
+                  const defaultPrompt = '새로 생성된 AI 에이전트입니다. 역할을 정의해주세요.';
+                  if (e.target.value === defaultPrompt) {
+                    e.target.value = '';
+                    e.target.placeholder = '';
+                  }
+                }}
+                onBlur={(e) => {
+                  updateAgent({ ...agent, prompt: e.target.value });
+                }}
+                className={`w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 ${
+                  agent.prompt === '새로 생성된 AI 에이전트입니다. 역할을 정의해주세요.' || !agent.prompt 
+                    ? 'text-gray-400' 
+                    : 'text-gray-700'
+                }`}
+                rows="4"
+                placeholder="이 에이전트의 역할과 행동 방식을 정의하세요..."
+              />
+            </div>
+
+            {/* 랜덤 지수 슬라이더 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                랜덤 지수 (창의성 수준)
+                <span className="ml-2 text-blue-600 font-semibold">{(agent.randomness || 0.7).toFixed(1)}</span>
+              </label>
+              <div className="px-3">
+                <div className="relative">
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.1"
+                    value={agent.randomness || 0.7}
+                    onChange={(e) => updateAgent({ 
+                      ...agent, 
+                      randomness: parseFloat(e.target.value),
+                      apiConfig: {
+                        ...agent.apiConfig,
+                        temperature: parseFloat(e.target.value)
+                      }
+                    })}
+                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+                    style={{
+                      background: `linear-gradient(to right, #3B82F6 0%, #3B82F6 ${(agent.randomness || 0.7) * 100}%, #E5E7EB ${(agent.randomness || 0.7) * 100}%, #E5E7EB 100%)`
+                    }}
+                  />
+                </div>
+                <div className="flex justify-between text-xs text-gray-500 mt-1">
+                  <span>보수적 (0.0)</span>
+                  <span>균형적 (0.5)</span>
+                  <span>창의적 (1.0)</span>
+                </div>
+              </div>
+              <p className="text-xs text-gray-500 mt-2">
+                낮을수록 일관되고 예측 가능한 답변, 높을수록 창의적이고 다양한 답변을 생성합니다.
+              </p>
+            </div>
+
+            {/* API 설정 */}
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h4 className="text-sm font-semibold text-gray-700 mb-3">🔧 API 설정</h4>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">모델</label>
+                  <select
+                    value={agent.apiConfig?.model || 'gpt-4'}
+                    onChange={(e) => updateAgent({ 
+                      ...agent, 
+                      apiConfig: { ...agent.apiConfig, model: e.target.value }
+                    })}
+                    className="w-full p-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
+                  >
+                    <option value="gpt-4">GPT-4</option>
+                    <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                    <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">최대 토큰</label>
+                  <input
+                    type="number"
+                    value={agent.apiConfig?.maxTokens || 1500}
+                    onChange={(e) => updateAgent({ 
+                      ...agent, 
+                      apiConfig: { ...agent.apiConfig, maxTokens: parseInt(e.target.value) }
+                    })}
+                    className="w-full p-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
+                    min="100"
+                    max="4000"
+                  />
+                </div>
+              </div>
+
+              <div className="mt-3 p-3 bg-blue-50 rounded-lg">
+                <div className="flex items-center space-x-2 text-xs">
+                  <span className="text-blue-600">💡</span>
+                  <span className="text-blue-700">
+                    API 키는 공유 방식을 사용합니다. Temperature는 위의 랜덤 지수와 동기화됩니다.
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* 위험 구역 - 에이전트 삭제 */}
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <button
+                onClick={() => deleteAgent(agentKey)}
+                className="px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition-colors flex items-center space-x-2"
+              >
+                <Trash2 size={16} />
+                <span>에이전트 삭제</span>
+              </button>
+            </div>
+
+          </div>
+        </div>
+      );
+    }
+
+    // 기본 카드 뷰 - 바로 편집 가능
+    return (
+      <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition-shadow">
+        {/* 에이전트 헤더 */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-4 flex-1">
+            <div className={`w-12 h-12 ${agent.color} rounded-xl flex items-center justify-center text-white text-2xl`}>
+              {agent.avatar}
+            </div>
+            <div className="flex-1">
+              {/* 에이전트 이름 편집 */}
+              <input
+                type="text"
+                defaultValue={agent.name || ''}
+                onBlur={(e) => updateAgent({ ...agent, name: e.target.value })}
+                className="text-xl font-bold text-gray-900 bg-transparent border-b-2 border-transparent hover:border-gray-300 focus:border-blue-500 focus:outline-none transition-colors w-full mb-2"
+                placeholder="에이전트 이름을 입력하세요"
+              />
+            </div>
+          </div>
+          <div className="flex space-x-2">
+            {/* 저장 버튼 */}
+            <button
+              onClick={() => handleSaveAgent(agentKey, agent)}
+              disabled={saving}
+              className="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              title="에이전트 저장"
+            >
+              {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+            </button>
+            
+            <button
+              onClick={() => setEditingAgent(agentKey)}
+              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              title="고급 설정"
+            >
+              <Settings size={18} />
+            </button>
+          </div>
+        </div>
+
+        {/* 시스템 프롬프트 편집 */}
+        <div className="mb-4">
+          <div className="text-sm font-medium text-gray-700 mb-2">시스템 프롬프트</div>
+          <textarea
+            defaultValue={agent.prompt || ''}
+            onFocus={(e) => {
+              const defaultPrompt = '새로 생성된 AI 에이전트입니다. 역할을 정의해주세요.';
+              if (e.target.value === defaultPrompt) {
+                e.target.value = '';
+                e.target.placeholder = '';
+              }
+            }}
+            onBlur={(e) => {
+              updateAgent({ ...agent, prompt: e.target.value });
+            }}
+            className={`w-full p-3 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:bg-white transition-colors resize-none ${
+              agent.prompt === '새로 생성된 AI 에이전트입니다. 역할을 정의해주세요.' || !agent.prompt 
+                ? 'text-gray-400' 
+                : 'text-gray-700'
+            }`}
+            rows="4"
+            placeholder="이 에이전트의 역할과 행동 방식을 정의하세요..."
+          />
+        </div>
+
+        {/* 랜덤 지수 슬라이더 */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-sm font-medium text-gray-700">랜덤 지수 (창의성)</div>
+            <span className="text-sm font-semibold text-blue-600">
+              {(agent.randomness || 0.7).toFixed(1)}
+            </span>
+          </div>
+          <div className="mb-2">
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.1"
+              value={agent.randomness || 0.7}
+              onChange={(e) => updateAgent({ ...agent, randomness: parseFloat(e.target.value) })}
+              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+              style={{
+                background: `linear-gradient(to right, #3B82F6 0%, #3B82F6 ${(agent.randomness || 0.7) * 100}%, #E5E7EB ${(agent.randomness || 0.7) * 100}%, #E5E7EB 100%)`
+              }}
+            />
+          </div>
+          <div className="flex justify-between text-xs text-gray-500">
+            <span>보수적</span>
+            <span>균형적</span>
+            <span>창의적</span>
+          </div>
+        </div>
+      </div>
+    );
+  });
 
   // 문서 관계 탭 컴포넌트
   const DocumentRelationTab = () => {
@@ -661,20 +1150,9 @@ const BotSetting_menu = () => {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* DB에서 불러온 에이전트 배열을 순회하며 카드 렌더링 */}
-              {agents.map(agent => (
-                <AgentCard
-                  key={agent.id}
-                  agent={agent}
-                  editingAgent={editingAgent}
-                  setEditingAgent={setEditingAgent}
-                  saving={saving}
-                  handleSaveAgent={handleSaveAgent}
-                  deleteAgent={deleteAgent}
-                  responseLengthOptions={responseLengthOptions}
-                  generateEnhancedPrompt={generateEnhancedPrompt}
-                />
-              ))}
+                  {Object.entries(agents).map(([agentKey, agent]) => (
+                    <AgentCard key={agentKey} agentKey={agentKey} agent={agent} />
+                  ))}
                 </div>
               )}
             </div>
@@ -695,41 +1173,9 @@ export const callOpenAIAPI = async (agentConfig, userMessage) => {
   // 환경변수에서 API 키 가져오기 (단일 키 사용)
   const apiKey = process.env.REACT_APP_OPENAI_API_KEY;
   
-  // 성격과 스타일이 반영된 강화 프롬프트 생성
+  // 강화 프롬프트 생성
   const generateEnhancedPrompt = (agent) => {
-    const personalityPrompts = {
-      conservative: "신중하고 안정적인 접근을 취하며, 검증된 정보와 기존의 모범 사례를 중시합니다. 리스크를 최소화하고 단계적인 해결책을 제시합니다.",
-      balanced: "현실적이고 실용적인 관점에서 균형 잡힌 답변을 제공합니다. 다양한 관점을 고려하며 상황에 맞는 최적의 해결책을 찾습니다.",
-      innovative: "창의적이고 도전적인 접근을 통해 새로운 아이디어와 혁신적인 해결책을 제시합니다. 기존 관습에 얽매이지 않고 참신한 관점을 제공합니다.",
-      creative: "독창적이고 유연한 사고로 창의적인 아이디어를 생성합니다. 상상력을 발휘하여 예술적이고 혁신적인 접근법을 제안합니다.",
-      analytical: "데이터와 논리에 기반한 체계적인 분석을 통해 객관적이고 정확한 답변을 제공합니다. 근거를 명확히 제시하며 논리적 추론을 중시합니다."
-    };
-
-    const responseStylePrompts = {
-      brief: "핵심 내용만을 간결하고 명확하게 전달합니다. 불필요한 설명은 생략하고 요점만 정리하여 답변합니다.",
-      medium: "필요한 내용을 적절한 수준으로 설명합니다. 중요한 배경 정보와 구체적인 예시를 포함하여 이해하기 쉽게 답변합니다.",
-      detailed: "주제에 대해 포괄적이고 상세한 설명을 제공합니다. 관련 배경, 세부 사항, 다양한 예시, 추가 고려사항까지 포함하여 깊이 있게 답변합니다."
-    };
-
-    const basePrompt = agent.prompt || '';
-    const personalityAddition = personalityPrompts[agent.personality] || '';
-    const styleAddition = responseStylePrompts[agent.responseLength] || '';
-
-    let enhancedPrompt = basePrompt;
-    
-    if (personalityAddition) {
-      enhancedPrompt += `\n\n[성격 특성]\n${personalityAddition}`;
-    }
-    
-    if (styleAddition) {
-      enhancedPrompt += `\n\n[답변 스타일]\n${styleAddition}`;
-    }
-
-    if (agent.expertise && agent.expertise.length > 0) {
-      enhancedPrompt += `\n\n[전문 분야]\n당신은 ${agent.expertise.join(', ')} 분야의 전문가입니다.`;
-    }
-
-    return enhancedPrompt.trim();
+    return agent.prompt || '';
   };
 
   const enhancedPrompt = generateEnhancedPrompt(agentConfig);

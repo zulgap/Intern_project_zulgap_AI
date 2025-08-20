@@ -1,0 +1,13 @@
+# GitHub 언어 감지를 위한 설정
+*.sql linguist-language=SQL
+*_schema.sql linguist-language=SQL
+
+# 기타 파일 타입 설정
+*.js linguist-language=JavaScript
+*.jsx linguist-language=JavaScript
+*.md linguist-documentation
+
+# 빌드된 파일들은 언어 통계에서 제외
+build/ linguist-generated=true
+dist/ linguist-generated=true
+node_modules/ linguist-vendored=true
