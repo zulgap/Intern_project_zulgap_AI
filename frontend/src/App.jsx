@@ -1,10 +1,12 @@
-import React from 'react'
-import WorkflowBuilder from './components/WorkflowBuilder.jsx'
+// 안쓰인다고 함
+// 
+import React from "react";
+import BotsList from "./menues/BotsList"; // 경로는 실제 위치에 맞게 수정 (예: "./components/BotsList")
 
 export default function App() {
   return (
-    <div className="h-screen">
-      <WorkflowBuilder />
+    <div>
+      <BotsList />
     </div>
-  )
+  );
 }

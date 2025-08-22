@@ -7,6 +7,7 @@ import ChatPage from "./menues/Chat_menu";
 import HomePage from "./pages/HomePage";
 import BotSettingPage from "./menues/BotSetting_menu";
 import ClientsPage from "./menues/Clients_menu";
+import BotsList from "./menues/BotsList";
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
         <Route path="/chat-react" element={<ChatPage />} />
         <Route path="/botsetting" element={<BotSettingPage />} />
         <Route path="/clients" element={<ClientsPage />} />
+        <Route path="/botslist" element={<BotsList />} />
       </Routes>
     </Router>
   );

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { 
-  Bot, 
+import {
+  Bot,
   Save,
   RefreshCw,
   Settings,
@@ -19,6 +19,25 @@ import {
 } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 
+
+// 간단 파서
+const parseJsonSafe = (s) => { try { return s ? JSON.parse(s) : {}; } catch { return {}; } };
+
+// 프론트 상태 → 백엔드 바디
+const toBack = (a) => ({
+  // 백엔드는 name, prompt가 필수
+  name: a.name ?? '',
+  prompt: a.prompt ?? '',
+  avatar: a.avatar ?? null,
+  color: a.color ?? null,
+  personality: a.personality ?? null,
+  response_length: a.responseLength ?? a.response_length ?? null,
+  expertise: Array.isArray(a.expertise) ? a.expertise : [],
+  randomness: typeof a.randomness === 'number' ? a.randomness : 0.7,
+  api_config: JSON.stringify(a.apiConfig ?? a.api_config ?? {}),
+});
+
+
 const BotSetting_menu = () => {
   const [activeTab, setActiveTab] = useState('basic');
   const [editingAgent, setEditingAgent] = useState(null);
@@ -36,24 +55,41 @@ const BotSetting_menu = () => {
   });
   const [agentDocumentMappings, setAgentDocumentMappings] = useState({});
 
-  // 초기 데이터 로드 (목업 데이터 사용)
+  
+  // 초기 데이터 로드
   const loadInitialData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
 
-      // 목업 데이터로 대체
-      await new Promise(resolve => setTimeout(resolve, 500)); // 로딩 시뮬레이션
-      
-      // 에이전트는 이미 초기값으로 설정됨
-      // 문서와 관계는 빈 배열로 시작
+      const res = await fetch('/api/bots');
+      if (!res.ok) throw new Error(`서버 오류: ${res.status}`);
+      const data = await res.json(); // { bots: [...] }
+
+      // 리스트 → 화면 상태 형태로 맵핑
+      const map = {};
+      (data.bots || []).forEach((b) => {
+        map[String(b.id)] = {
+          id: b.id,
+          name: b.name || '',
+          avatar: b.avatar || '🤖',
+          color: b.color || 'bg-gray-500',
+          prompt: b.prompt || '',
+          randomness: typeof b.randomness === 'number' ? b.randomness : 0.7,
+          expertise: Array.isArray(b.expertise)
+            ? b.expertise
+            : (b.expertise ? String(b.expertise).split(',').map(s => s.trim()).filter(Boolean) : []),
+          apiConfig: parseJsonSafe(b.api_config),
+        };
+      });
+
+      setAgents(map);
       setDocuments([]);
       setRelationships([]);
       setAgentDocumentMappings({});
-      
-      showMessage('설정이 로드되었습니다.');
+      showMessage('DB에서 에이전트 목록을 불러왔습니다.');
     } catch (err) {
-      setError(err.message);
+      setError(err.message || '데이터 로드 실패');
     } finally {
       setLoading(false);
     }
@@ -79,10 +115,10 @@ const BotSetting_menu = () => {
   const handleFileUpload = async (files) => {
     try {
       setUploading(true);
-      
+
       // 목업 업로드 처리
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
       const uploadedDocs = Array.from(files).map((file, index) => ({
         id: Date.now() + index,
         name: file.name,
@@ -102,7 +138,7 @@ const BotSetting_menu = () => {
 
   // 문서 설명 업데이트 (목업)
   const updateDocumentDescription = async (docId, description) => {
-    setDocuments(prev => prev.map(doc => 
+    setDocuments(prev => prev.map(doc =>
       doc.id === docId ? { ...doc, description } : doc
     ));
   };
@@ -132,7 +168,7 @@ const BotSetting_menu = () => {
 
   // 관계 업데이트 (목업)
   const updateRelationship = async (id, field, value) => {
-    setRelationships(prev => prev.map(rel => 
+    setRelationships(prev => prev.map(rel =>
       rel.id === id ? { ...rel, [field]: value } : rel
     ));
   };
@@ -143,90 +179,144 @@ const BotSetting_menu = () => {
     showMessage('관계가 삭제되었습니다.');
   };
 
-  // 에이전트 저장 (목업)
-  const handleSaveAgent = async (agentKey, updatedAgent) => {
-    try {
-      // 프롬프트 유효성 검사
-      const defaultPrompt = '새로 생성된 AI 에이전트입니다. 역할을 정의해주세요.';
-      const prompt = updatedAgent.prompt?.trim();
-      
-      if (!prompt || prompt === defaultPrompt) {
-        showMessage('시스템 프롬프트를 입력해주세요. AI 에이전트가 어떤 역할을 수행할지 구체적으로 작성해야 합니다.', 'error');
-        return;
-      }
-      
-      setSaving(true);
-      
-      // 목업 저장 처리
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      setAgents(prev => ({
-        ...prev,
-        [agentKey]: updatedAgent
-      }));
-      setEditingAgent(null);
-      showMessage('에이전트 설정이 저장되었습니다.');
-    } catch (err) {
-      showMessage('저장에 실패했습니다.', 'error');
-    } finally {
-      setSaving(false);
+  
+  // 에이전트 저장 (실제 PUT)
+const handleSaveAgent = async (agentKey, updatedAgent) => {
+  try {
+    // 1) 유효성 검사 (백엔드는 name, prompt 필수)
+    const name = (updatedAgent.name || '').trim();
+    const prompt = (updatedAgent.prompt || '').trim();
+    const defaultPrompt = '새로 생성된 AI 에이전트입니다. 역할을 정의해주세요.';
+
+    if (!name) {
+      showMessage('에이전트 이름을 입력해주세요.', 'error');
+      return;
     }
-  };
+    if (!prompt || prompt === defaultPrompt) {
+      showMessage('시스템 프롬프트를 입력해주세요.', 'error');
+      return;
+    }
 
-  // 새 에이전트 추가
-  const addNewAgent = () => {
-    const newAgentId = `agent_${Date.now()}`;
-    const newAgent = {
-      name: '새로운 에이전트',
-      avatar: '🤖',
-      color: 'bg-gray-500',
-      prompt: '새로 생성된 AI 에이전트입니다. 역할을 정의해주세요.',
-      randomness: 0.7,
-      // API 설정 (단일 키 공유)
-      apiConfig: {
-        useSharedKey: true,
-        temperature: 0.7,
-        maxTokens: 1500,
-        model: 'gpt-4'
-      }
-    };
+    setSaving(true);
 
+    // 2) 백엔드 요청
+    const id = updatedAgent.id; // ← 반드시 숫자/진짜 id여야 합니다
+    const res = await fetch(`/api/bots/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(toBack(updatedAgent)),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    await res.json(); // { message: ... }
+
+    // 3) 화면 상태 반영
     setAgents(prev => ({
       ...prev,
-      [newAgentId]: newAgent
-    }));
-    
-    // 새 에이전트를 바로 편집 모드로
-    setEditingAgent(newAgentId);
-    showMessage('새로운 에이전트가 추가되었습니다!');
-  };
-
-  // 에이전트 삭제
-  const deleteAgent = (agentKey) => {
-    const agent = agents[agentKey];
-    const agentName = agent?.name || '이름 없는 에이전트';
-    
-    if (window.confirm(`정말로 "${agentName}" 에이전트를 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.`)) {
-      setAgents(prev => {
-        const newAgents = { ...prev };
-        delete newAgents[agentKey];
-        return newAgents;
-      });
-      
-      // 매핑에서도 제거
-      setAgentDocumentMappings(prev => {
-        const newMappings = { ...prev };
-        delete newMappings[agentKey];
-        return newMappings;
-      });
-      
-      if (editingAgent === agentKey) {
-        setEditingAgent(null);
+      [String(agentKey)]: {
+        ...updatedAgent,
+        // 서버에서 반영된 값이 더 있다면 여기서 병합 가능
       }
-      
-      showMessage(`"${agentName}" 에이전트가 삭제되었습니다.`);
+    }));
+    setEditingAgent(null);
+    showMessage('에이전트 설정이 저장되었습니다.');
+  } catch (err) {
+    showMessage('저장에 실패했습니다. ' + (err?.message || ''), 'error');
+  } finally {
+    setSaving(false);
+  }
+};
+
+
+// 새 에이전트 추가 (백엔드 POST 연동)
+const addNewAgent = async () => {
+  try {
+    setSaving(true);
+
+    // 최소 필수 페이로드: name, prompt (추가 필드는 나중에 PUT에서 다룹니다)
+    const payload = {
+      name: '새로운 에이전트',
+      prompt: '새로 생성된 AI 에이전트입니다. 역할을 정의해주세요.',
+      // 선택: 초깃값을 함께 저장하고 싶다면 아래를 같이 보낼 수도 있어요
+      expertise: [],
+      randomness: 0.7,
+      api_config: JSON.stringify({ useSharedKey: true, temperature: 0.7, maxTokens: 1500, model: 'gpt-4' })
+    };
+
+    const res = await fetch('/api/bots', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json(); // { id: ... }
+
+    const backendId = String(data.id);
+
+    // 화면 상태에 새 카드 추가 (방금 만든 id로 키를 씁니다)
+    setAgents(prev => ({
+      ...prev,
+      [backendId]: {
+        id: data.id,
+        name: payload.name,
+        avatar: '🤖',
+        color: 'bg-gray-500',
+        prompt: payload.prompt,
+        randomness: payload.randomness ?? 0.7,
+        expertise: payload.expertise ?? [],
+        apiConfig: payload.api_config ? JSON.parse(payload.api_config) : {}
+      }
+    }));
+
+    // 바로 편집 모드로 진입
+    setEditingAgent(backendId);
+    showMessage('새로운 에이전트가 생성되었습니다!');
+  } catch (err) {
+    showMessage('생성 실패: ' + (err?.message || err), 'error');
+  } finally {
+    setSaving(false);
+  }
+};
+
+  // 에이전트 삭제 (실제 DELETE)
+const deleteAgent = async (agentKeyOrId) => {
+  try {
+    const key = String(agentKeyOrId);
+    const agent = agents?.[key] || agents?.[String(agentKeyOrId)] || null;
+    const id = agent?.id ?? Number(agentKeyOrId);
+
+    if (!id || Number.isNaN(Number(id))) {
+      showMessage('삭제할 에이전트 ID를 찾지 못했어요.', 'error');
+      return;
     }
-  };
+
+    // 사용자 확인 (실수 방지)
+    if (!window.confirm(`정말로 삭제할까요? (#${id} ${agent?.name ?? ''})`)) return;
+
+    setSaving(true);
+
+    // 1) 백엔드 삭제
+    const res = await fetch(`/api/bots/${id}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error(await res.text());
+    await res.json(); // { message: ... }
+
+    // 2) 화면 상태에서도 제거
+    setAgents(prev => {
+      const next = { ...prev };
+      delete next[key]; // 맵에서 제거
+      return next;
+    });
+
+    // 편집 중이었다면 해제
+    setEditingAgent(prev => (prev === key ? null : prev));
+
+    showMessage('에이전트를 삭제했습니다.');
+  } catch (err) {
+    showMessage('삭제에 실패했습니다. ' + (err?.message || ''), 'error');
+  } finally {
+    setSaving(false);
+  }
+};
+
 
   // 에이전트-문서 매핑 업데이트 (목업)
   const updateAgentDocumentMapping = async (agentKey, documentIds) => {
@@ -243,24 +333,24 @@ const BotSetting_menu = () => {
       // 모든 에이전트의 프롬프트 유효성 검사
       const defaultPrompt = '새로 생성된 AI 에이전트입니다. 역할을 정의해주세요.';
       const invalidAgents = [];
-      
+
       Object.entries(agents).forEach(([agentKey, agent]) => {
         const prompt = agent.prompt?.trim();
         if (!prompt || prompt === defaultPrompt || prompt.length < 0) {
           invalidAgents.push(agent.name || '이름 없는 에이전트');
         }
       });
-      
+
       if (invalidAgents.length > 0) {
         showMessage(`다음 에이전트들의 시스템 프롬프트를 확인해주세요: ${invalidAgents.join(', ')}. 각 에이전트의 역할과 행동 방식을 구체적으로 작성해야 합니다.`, 'error');
         return;
       }
-      
+
       setSaving(true);
-      
+
       // 목업 저장 처리
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
       showMessage('모든 설정이 저장되었습니다.');
     } catch (err) {
       showMessage('저장에 실패했습니다.', 'error');
@@ -309,12 +399,11 @@ const BotSetting_menu = () => {
     if (!error && !success) return null;
 
     return (
-      <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg flex items-center space-x-2 ${
-        error ? 'bg-red-50 border border-red-200 text-red-700' : 'bg-green-50 border border-green-200 text-green-700'
-      }`}>
+      <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg flex items-center space-x-2 ${error ? 'bg-red-50 border border-red-200 text-red-700' : 'bg-green-50 border border-green-200 text-green-700'
+        }`}>
         {error ? <AlertCircle size={20} /> : <CheckCircle size={20} />}
         <span>{error || success}</span>
-        <button 
+        <button
           onClick={() => { setError(null); setSuccess(null); }}
           className="ml-2 text-gray-500 hover:text-gray-700"
         >
@@ -385,11 +474,10 @@ const BotSetting_menu = () => {
                 onBlur={(e) => {
                   updateAgent({ ...agent, prompt: e.target.value });
                 }}
-                className={`w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 ${
-                  agent.prompt === '새로 생성된 AI 에이전트입니다. 역할을 정의해주세요.' || !agent.prompt 
-                    ? 'text-gray-400' 
+                className={`w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 ${agent.prompt === '새로 생성된 AI 에이전트입니다. 역할을 정의해주세요.' || !agent.prompt
+                    ? 'text-gray-400'
                     : 'text-gray-700'
-                }`}
+                  }`}
                 rows="4"
                 placeholder="이 에이전트의 역할과 행동 방식을 정의하세요..."
               />
@@ -409,8 +497,8 @@ const BotSetting_menu = () => {
                     max="1"
                     step="0.1"
                     value={agent.randomness || 0.7}
-                    onChange={(e) => updateAgent({ 
-                      ...agent, 
+                    onChange={(e) => updateAgent({
+                      ...agent,
                       randomness: parseFloat(e.target.value),
                       apiConfig: {
                         ...agent.apiConfig,
@@ -437,14 +525,14 @@ const BotSetting_menu = () => {
             {/* API 설정 */}
             <div className="bg-gray-50 rounded-lg p-4">
               <h4 className="text-sm font-semibold text-gray-700 mb-3">🔧 API 설정</h4>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">모델</label>
                   <select
                     value={agent.apiConfig?.model || 'gpt-4'}
-                    onChange={(e) => updateAgent({ 
-                      ...agent, 
+                    onChange={(e) => updateAgent({
+                      ...agent,
                       apiConfig: { ...agent.apiConfig, model: e.target.value }
                     })}
                     className="w-full p-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
@@ -454,14 +542,14 @@ const BotSetting_menu = () => {
                     <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
                   </select>
                 </div>
-                
+
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">최대 토큰</label>
                   <input
                     type="number"
                     value={agent.apiConfig?.maxTokens || 1500}
-                    onChange={(e) => updateAgent({ 
-                      ...agent, 
+                    onChange={(e) => updateAgent({
+                      ...agent,
                       apiConfig: { ...agent.apiConfig, maxTokens: parseInt(e.target.value) }
                     })}
                     className="w-full p-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
@@ -527,7 +615,7 @@ const BotSetting_menu = () => {
             >
               {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
             </button>
-            
+
             <button
               onClick={() => setEditingAgent(agentKey)}
               className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
@@ -553,11 +641,10 @@ const BotSetting_menu = () => {
             onBlur={(e) => {
               updateAgent({ ...agent, prompt: e.target.value });
             }}
-            className={`w-full p-3 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:bg-white transition-colors resize-none ${
-              agent.prompt === '새로 생성된 AI 에이전트입니다. 역할을 정의해주세요.' || !agent.prompt 
-                ? 'text-gray-400' 
+            className={`w-full p-3 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:bg-white transition-colors resize-none ${agent.prompt === '새로 생성된 AI 에이전트입니다. 역할을 정의해주세요.' || !agent.prompt
+                ? 'text-gray-400'
                 : 'text-gray-700'
-            }`}
+              }`}
             rows="4"
             placeholder="이 에이전트의 역할과 행동 방식을 정의하세요..."
           />
@@ -651,17 +738,16 @@ const BotSetting_menu = () => {
     return (
       <div className="flex-1 p-6">
         <div className="max-w-6xl mx-auto space-y-8">
-          
+
           {/* 파일 업로드 영역 */}
           <div className="bg-white rounded-xl border border-gray-200 p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">📁 문서 업로드</h3>
-            
+
             <div
-              className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${
-                dragOver 
-                  ? 'border-blue-400 bg-blue-50' 
+              className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${dragOver
+                  ? 'border-blue-400 bg-blue-50'
                   : 'border-gray-300 hover:border-gray-400'
-              }`}
+                }`}
               onDrop={handleDrop}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
@@ -709,7 +795,7 @@ const BotSetting_menu = () => {
               <h3 className="text-lg font-semibold text-gray-900">📚 업로드된 문서</h3>
               <span className="text-sm text-gray-500">{documents.length}개 문서</span>
             </div>
-            
+
             {documents.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 업로드된 문서가 없습니다.<br />
@@ -736,7 +822,7 @@ const BotSetting_menu = () => {
                         <Trash2 size={16} />
                       </button>
                     </div>
-                    
+
                     <textarea
                       defaultValue={localDescriptions[doc.id] || ''}
                       onBlur={(e) => updateLocalDescription(doc.id, e.target.value)}
@@ -783,7 +869,7 @@ const BotSetting_menu = () => {
                 {relationships.map(relationship => {
                   const doc1 = getDocumentById(relationship.doc1);
                   const doc2 = getDocumentById(relationship.doc2);
-                  
+
                   return (
                     <div key={relationship.id} className="border border-gray-200 rounded-lg p-6 bg-gray-50">
                       <div className="flex items-center justify-between mb-4">
@@ -857,7 +943,7 @@ const BotSetting_menu = () => {
                             ({relationshipTypes[relationship.relationshipType]?.description})
                           </span>
                         </label>
-                        
+
                         <div className="space-y-3">
                           {/* 주요 설명 입력 */}
                           <textarea
@@ -867,7 +953,7 @@ const BotSetting_menu = () => {
                             className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-sm"
                             rows="4"
                           />
-                          
+
                           {/* 추가 텍스트 필드들 */}
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div>
@@ -880,7 +966,7 @@ const BotSetting_menu = () => {
                                 className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-sm"
                               />
                             </div>
-                            
+
                             <div>
                               <label className="block text-xs font-medium text-gray-600 mb-1">우선순위 (1-5)</label>
                               <select
@@ -920,7 +1006,7 @@ const BotSetting_menu = () => {
           {/* 에이전트 문서 매핑 */}
           <div className="bg-white rounded-xl border border-gray-200 p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">🤖 에이전트 문서 매핑</h3>
-            
+
             {Object.keys(agents).length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 <Bot size={48} className="mx-auto text-gray-300 mb-4" />
@@ -940,7 +1026,7 @@ const BotSetting_menu = () => {
                         <p className="text-sm text-gray-600">이 에이전트가 참고할 문서들을 선택하세요</p>
                       </div>
                     </div>
-                    
+
                     {documents.length === 0 ? (
                       <div className="text-center py-4 text-gray-500 text-sm">
                         매핑할 문서가 없습니다. 먼저 문서를 업로드해주세요.
@@ -949,15 +1035,14 @@ const BotSetting_menu = () => {
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                         {documents.map(doc => {
                           const isSelected = agentDocumentMappings[agentKey]?.includes(doc.id) || false;
-                          
+
                           return (
                             <div
                               key={doc.id}
-                              className={`border rounded-lg p-3 cursor-pointer transition-all ${
-                                isSelected 
-                                  ? 'border-blue-500 bg-blue-50' 
+                              className={`border rounded-lg p-3 cursor-pointer transition-all ${isSelected
+                                  ? 'border-blue-500 bg-blue-50'
                                   : 'border-gray-200 bg-white hover:border-gray-300'
-                              }`}
+                                }`}
                               onClick={() => {
                                 const currentMappings = agentDocumentMappings[agentKey] || [];
                                 const newMappings = isSelected
@@ -971,29 +1056,25 @@ const BotSetting_menu = () => {
                                   <File size={16} className={isSelected ? 'text-blue-600' : 'text-gray-600'} />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <h5 className={`font-medium text-sm truncate ${
-                                    isSelected ? 'text-blue-900' : 'text-gray-900'
-                                  }`}>
+                                  <h5 className={`font-medium text-sm truncate ${isSelected ? 'text-blue-900' : 'text-gray-900'
+                                    }`}>
                                     {doc.name}
                                   </h5>
-                                  <p className={`text-xs mt-1 ${
-                                    isSelected ? 'text-blue-600' : 'text-gray-500'
-                                  }`}>
+                                  <p className={`text-xs mt-1 ${isSelected ? 'text-blue-600' : 'text-gray-500'
+                                    }`}>
                                     {doc.size}
                                   </p>
                                   {doc.description && (
-                                    <p className={`text-xs mt-1 line-clamp-2 ${
-                                      isSelected ? 'text-blue-600' : 'text-gray-500'
-                                    }`}>
+                                    <p className={`text-xs mt-1 line-clamp-2 ${isSelected ? 'text-blue-600' : 'text-gray-500'
+                                      }`}>
                                       {doc.description}
                                     </p>
                                   )}
                                 </div>
-                                <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
-                                  isSelected 
-                                    ? 'border-blue-500 bg-blue-500' 
+                                <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${isSelected
+                                    ? 'border-blue-500 bg-blue-500'
                                     : 'border-gray-300'
-                                }`}>
+                                  }`}>
                                   {isSelected && (
                                     <Check size={12} className="text-white" />
                                   )}
@@ -1004,7 +1085,7 @@ const BotSetting_menu = () => {
                         })}
                       </div>
                     )}
-                    
+
                     {/* 선택된 문서 요약 */}
                     <div className="mt-4 pt-4 border-t border-gray-200">
                       <div className="flex items-center justify-between text-sm">
@@ -1046,7 +1127,7 @@ const BotSetting_menu = () => {
   return (
     <div className="flex h-screen bg-gray-50">
       <MessageBanner />
-      
+
       {/* 기존 Sidebar 컴포넌트 사용 */}
       <Sidebar />
 
@@ -1060,41 +1141,39 @@ const BotSetting_menu = () => {
                 {activeTab === 'basic' ? '에이전트 기본 설정' : '문서 관계 설정'}
               </h2>
               <p className="text-gray-600 mt-1">
-                {activeTab === 'basic' 
+                {activeTab === 'basic'
                   ? '각 AI 에이전트의 성격과 전문성을 커스터마이징하세요'
                   : '참고 문서와 에이전트 간의 관계를 설정하세요'
                 }
               </p>
             </div>
-            
+
             <div className="flex items-center space-x-3 flex-shrink-0">
               {/* 탭 선택 버튼들 */}
               <div className="flex bg-gray-100 rounded-lg p-1">
                 <button
                   onClick={() => setActiveTab('basic')}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${
-                    activeTab === 'basic' 
-                      ? 'bg-white text-gray-900 shadow-sm' 
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'basic'
+                      ? 'bg-white text-gray-900 shadow-sm'
                       : 'text-gray-600 hover:text-gray-900'
-                  }`}
+                    }`}
                 >
                   <User size={16} className="inline mr-2" />
                   기본 설정
                 </button>
                 <button
                   onClick={() => setActiveTab('documents')}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${
-                    activeTab === 'documents' 
-                      ? 'bg-white text-gray-900 shadow-sm' 
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'documents'
+                      ? 'bg-white text-gray-900 shadow-sm'
                       : 'text-gray-600 hover:text-gray-900'
-                  }`}
+                    }`}
                 >
                   <FileText size={16} className="inline mr-2" />
                   문서 관계
                 </button>
               </div>
-              
-              <button 
+
+              <button
                 onClick={loadInitialData}
                 disabled={loading}
                 className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center space-x-2 disabled:opacity-50 whitespace-nowrap"
@@ -1102,7 +1181,7 @@ const BotSetting_menu = () => {
                 <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
                 <span>초기화</span>
               </button>
-              <button 
+              <button
                 onClick={handleSaveAll}
                 disabled={saving}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2 disabled:opacity-50 whitespace-nowrap"
@@ -1130,7 +1209,7 @@ const BotSetting_menu = () => {
                   </button>
                 </div>
               )}
-              
+
               {Object.keys(agents).length === 0 ? (
                 <div className="text-center py-16">
                   <Bot size={64} className="mx-auto text-gray-300 mb-6" />
@@ -1172,14 +1251,14 @@ const BotSetting_menu = () => {
 export const callOpenAIAPI = async (agentConfig, userMessage) => {
   // 환경변수에서 API 키 가져오기 (단일 키 사용)
   const apiKey = process.env.REACT_APP_OPENAI_API_KEY;
-  
+
   // 강화 프롬프트 생성
   const generateEnhancedPrompt = (agent) => {
     return agent.prompt || '';
   };
 
   const enhancedPrompt = generateEnhancedPrompt(agentConfig);
-  
+
   try {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
