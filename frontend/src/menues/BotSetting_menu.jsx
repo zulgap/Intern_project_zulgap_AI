@@ -253,8 +253,9 @@ const addNewAgent = async () => {
     const backendId = String(data.id);
 
     // 화면 상태에 새 카드 추가 (방금 만든 id로 키를 씁니다)
+    // 새로 생성된 에이전트를 맨 앞에 추가하여 최신 항목이 상단에 보이게 함
+    const now = Date.now();
     setAgents(prev => ({
-      ...prev,
       [backendId]: {
         id: data.id,
         name: payload.name,
@@ -263,8 +264,10 @@ const addNewAgent = async () => {
         prompt: payload.prompt,
         randomness: payload.randomness ?? 0.7,
         expertise: payload.expertise ?? [],
-        apiConfig: payload.api_config ? JSON.parse(payload.api_config) : {}
-      }
+        apiConfig: payload.api_config ? JSON.parse(payload.api_config) : {},
+        createdAt: now
+      },
+      ...prev
     }));
 
     // 바로 편집 모드로 진입
@@ -595,27 +598,18 @@ const deleteAgent = async (agentKeyOrId) => {
               {agent.avatar}
             </div>
             <div className="flex-1">
-              {/* 에이전트 이름 편집 */}
+              {/* 에이전트 이름 (기본모드: 읽기 전용) */}
               <input
                 type="text"
-                defaultValue={agent.name || ''}
-                onBlur={(e) => updateAgent({ ...agent, name: e.target.value })}
-                className="text-xl font-bold text-gray-900 bg-transparent border-b-2 border-transparent hover:border-gray-300 focus:border-blue-500 focus:outline-none transition-colors w-full mb-2"
+                value={agent.name || ''}
+                readOnly
+                className="text-xl font-bold text-gray-900 bg-transparent border-b-2 border-transparent w-full mb-2"
                 placeholder="에이전트 이름을 입력하세요"
               />
             </div>
           </div>
           <div className="flex space-x-2">
-            {/* 저장 버튼 */}
-            <button
-              onClick={() => handleSaveAgent(agentKey, agent)}
-              disabled={saving}
-              className="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              title="에이전트 저장"
-            >
-              {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-            </button>
-
+            {/* 기본모드: 저장 버튼 제거, 편집(설정) 버튼만 노출 */}
             <button
               onClick={() => setEditingAgent(agentKey)}
               className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
@@ -627,24 +621,12 @@ const deleteAgent = async (agentKeyOrId) => {
         </div>
 
         {/* 시스템 프롬프트 편집 */}
-        <div className="mb-4">
+          <div className="mb-4">
           <div className="text-sm font-medium text-gray-700 mb-2">시스템 프롬프트</div>
           <textarea
-            defaultValue={agent.prompt || ''}
-            onFocus={(e) => {
-              const defaultPrompt = '새로 생성된 AI 에이전트입니다. 역할을 정의해주세요.';
-              if (e.target.value === defaultPrompt) {
-                e.target.value = '';
-                e.target.placeholder = '';
-              }
-            }}
-            onBlur={(e) => {
-              updateAgent({ ...agent, prompt: e.target.value });
-            }}
-            className={`w-full p-3 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:bg-white transition-colors resize-none ${agent.prompt === '새로 생성된 AI 에이전트입니다. 역할을 정의해주세요.' || !agent.prompt
-                ? 'text-gray-400'
-                : 'text-gray-700'
-              }`}
+            value={agent.prompt || ''}
+            disabled
+            className={`w-full p-3 text-sm bg-gray-50 border border-gray-200 rounded-lg resize-none ${agent.prompt ? 'text-gray-700' : 'text-gray-400'}`}
             rows="4"
             placeholder="이 에이전트의 역할과 행동 방식을 정의하세요..."
           />
@@ -665,8 +647,8 @@ const deleteAgent = async (agentKeyOrId) => {
               max="1"
               step="0.1"
               value={agent.randomness || 0.7}
-              onChange={(e) => updateAgent({ ...agent, randomness: parseFloat(e.target.value) })}
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+              disabled
+              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-not-allowed"
               style={{
                 background: `linear-gradient(to right, #3B82F6 0%, #3B82F6 ${(agent.randomness || 0.7) * 100}%, #E5E7EB ${(agent.randomness || 0.7) * 100}%, #E5E7EB 100%)`
               }}
@@ -1013,9 +995,11 @@ const deleteAgent = async (agentKeyOrId) => {
                 <p>생성된 에이전트가 없습니다.</p>
                 <p className="text-sm">먼저 기본 설정에서 에이전트를 설정해주세요.</p>
               </div>
-            ) : (
-              <div className="space-y-6">
-                {Object.entries(agents).map(([agentKey, agent]) => (
+              ) : (
+                <div className="space-y-6">
+                {Object.entries(agents)
+                  .sort((a, b) => (b[1]?.createdAt || 0) - (a[1]?.createdAt || 0))
+                  .map(([agentKey, agent]) => (
                   <div key={agentKey} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
                     <div className="flex items-center mb-4">
                       <div className={`w-10 h-10 ${agent.color} rounded-lg flex items-center justify-center text-white text-lg mr-3`}>
@@ -1229,7 +1213,9 @@ const deleteAgent = async (agentKeyOrId) => {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {Object.entries(agents).map(([agentKey, agent]) => (
+                  {Object.entries(agents)
+                    .sort((a, b) => (b[1]?.createdAt || 0) - (a[1]?.createdAt || 0))
+                    .map(([agentKey, agent]) => (
                     <AgentCard key={agentKey} agentKey={agentKey} agent={agent} />
                   ))}
                 </div>

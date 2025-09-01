@@ -45,13 +45,15 @@ export const getAgentById = (agentId) => {
 // 에이전트 이름 목록 가져오기 (드롭다운용)
 export const getAgentNameList = () => {
   const agents = getAllAgents();
-  return Object.entries(agents).map(([id, agent]) => ({
-    id,
-    name: agent.name,
-    avatar: agent.avatar,
-    color: agent.color,
-    personality: agent.personality
-  }));
+  return Object.entries(agents)
+    .sort((a, b) => (b[1]?.createdAt || 0) - (a[1]?.createdAt || 0))
+    .map(([id, agent]) => ({
+      id,
+      name: agent.name,
+      avatar: agent.avatar,
+      color: agent.color,
+      personality: agent.personality
+    }));
 };
 
 // 에이전트 존재 여부 확인
