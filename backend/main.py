@@ -4,16 +4,34 @@ Flask 기반 API 서버로 React 프론트엔드와 연동
 """
 
 from flask import Flask, send_from_directory, jsonify, request
-# bot_db.py에서 CRUD 함수 임포트
 import sys, os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))  # backend/ 경로 추가
+# bot_db.py에서 CRUD 함수 임포트
 import bot_db
 from dotenv import load_dotenv
 from openai import OpenAI
+import json
 
 # 환경 변수 로드
 load_dotenv()
 openai_api_key = os.getenv("OPENAI_API_KEY")
+
+# 💡 팀장 에이전트 OpenAI 모델명 환경변수
+MODEL_NAME = os.getenv("TEAMLEAD_MODEL", "gpt-4o")
+FINAL_MODEL_NAME = os.getenv("TEAMLEAD_FINAL_MODEL", MODEL_NAME)
+MAX_COMPLETION_TOKENS = int(os.getenv("TEAMLEAD_MAX_TOKENS", "1200"))
+
+
+# ✅ 팀장 프롬프트 로더 (content_agent_prompts.json에서 system_prompt 읽기)
+POLICY_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'content_agent_prompts.json')
+try:
+    with open(POLICY_PATH, 'r', encoding='utf-8') as f:
+        TEAMLEAD_SYSTEM_PROMPT = json.load(f).get('system_prompt', '당신은 팀장 에이전트입니다.')
+    print("✅ TEAMLEAD_SYSTEM_PROMPT 로드 완료:", POLICY_PATH)
+except Exception as e:
+    print("⚠️ TEAMLEAD_SYSTEM_PROMPT 로드 실패:", e)
+    TEAMLEAD_SYSTEM_PROMPT = '당신은 팀장 에이전트입니다.'  # 안전한 기본값
+
 
 # OpenAI 클라이언트 초기화
 client = OpenAI(api_key=openai_api_key) if openai_api_key else None
@@ -160,7 +178,8 @@ def health_check():
     return jsonify({
         'status': 'healthy',
         'message': '✅ ZULGAP AI 백엔드 서버 정상 작동!',
-        'openai_configured': client is not None
+        'openai_configured': client is not None,
+        'model' : MODEL_NAME
     })
 
 
@@ -170,28 +189,32 @@ def chat_api():
     try:
         data = request.get_json()
         user_message = data.get('message', '')
-        
+        step = data.get('step', 1)  # ✅ 기본값은 1, 프론트에서 안주면 그냥 1단계 처리
+
         if not user_message:
             return jsonify({'error': '메시지가 비어있습니다.'}), 400
             
         if not client:
             return jsonify({'error': 'OpenAI API 키가 설정되지 않았습니다.'}), 500
-        
+
+        # ✅ 모델 선택 로직
+        model_to_use = FINAL_MODEL_NAME if step == 5 else MODEL_NAME
+
         # OpenAI API 호출
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model=model_to_use,
             messages=[
-                {"role": "system", "content": "당신은 ZULGAP AI 어시스턴트입니다. 친근하고 도움이 되는 응답을 해주세요."},
+                {"role": "system", "content": TEAMLEAD_SYSTEM_PROMPT},
                 {"role": "user", "content": user_message}
             ],
-            max_tokens=500,
-            temperature=0.7
+            max_completion_tokens = MAX_COMPLETION_TOKENS ## 토큰 수 조절은 .env에서
         )
-        
+
         ai_response = response.choices[0].message.content
-        
+
         return jsonify({
             'response': ai_response,
+            'used_model': model_to_use,  # ✅ 디버깅용으로 응답에 모델도 넣어줌
             'timestamp': os.environ.get('TZ', 'Asia/Seoul')
         })
         

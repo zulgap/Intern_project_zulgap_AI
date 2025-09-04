@@ -1,5 +1,4 @@
 //채팅 메뉴
-
 import React, { useState } from 'react';
 import Sidebar from '../components/Sidebar';
 
@@ -7,7 +6,7 @@ const ChatPage = () => {
   const [messages, setMessages] = useState([
     {
       id: 1,
-      content: "Zulgap AI 어시스턴트입니다! 무엇을 도와드릴까요?",
+      content: "Zulgap 팀장 에이전트입니다. 무엇을 도와드릴까요?",
       isUser: false,
       timestamp: new Date().toLocaleTimeString('ko-KR', {hour: '2-digit', minute: '2-digit'})
     }
@@ -20,29 +19,58 @@ const ChatPage = () => {
     </svg>
   );
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!inputMessage.trim()) return;
 
-    const newMessage = {
-      id: messages.length + 1,
-      content: inputMessage,
-      isUser: true,
-      timestamp: new Date().toLocaleTimeString('ko-KR', {hour: '2-digit', minute: '2-digit'})
-    };
+    // 1) 사용자 메시지 + 로딩 메시지 추가 (id 안전)
+    let thinkingId;
+    const userText = inputMessage; // fetch에 동일 문자열 사용
+    setMessages(prev => {
+      const nextId = (prev[prev.length - 1]?.id || 0) + 1;
+      thinkingId = nextId + 1;
+      return [
+        ...prev,
+        {
+          id: nextId,
+          content: userText,
+          isUser: true,
+          timestamp: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
+        },
+        {
+          id: thinkingId,
+          content: '팀장 에이전트가 응답을 준비 중입니다…',
+          isUser: false,
+          timestamp: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
+        }
+      ];
+    });
 
-    setMessages(prev => [...prev, newMessage]);
+    // 2) 입력창 비우기
     setInputMessage('');
 
-    // AI 응답 시뮬레이션
-    setTimeout(() => {
-      const aiResponse = {
-        id: messages.length + 2,
-        content: "안녕하세요! React 기반 AI에서 응답드리고 있습니다! 상태 관리와 컴포넌트 기반으로 부드럽게 동작하고 있어요. 더 궁금한 것이 있으시면 언제든지 물어보세요!",
-        isUser: false,
-        timestamp: new Date().toLocaleTimeString('ko-KR', {hour: '2-digit', minute: '2-digit'})
-      };
-      setMessages(prev => [...prev, aiResponse]);
-    }, 1000);
+    try {
+      console.log('[Chat] POST /api/chat ...', userText);
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: userText })
+      });
+
+      console.log('[Chat] /api/chat status:', res.status);
+      const data = await res.json().catch(() => ({}));
+      console.log('[Chat] /api/chat response:', data);
+
+      if (!res.ok) {
+        throw new Error(data?.error || `HTTP ${res.status}`);
+      }
+
+      const aiText = data?.response || '(응답 없음)';
+
+      // 3) 로딩 메시지 → 실제 응답으로 교체
+      setMessages(prev => prev.map(m => (m.id === thinkingId ? { ...m, content: aiText } : m)));
+    } catch (e) {
+      setMessages(prev => prev.map(m => (m.id === thinkingId ? { ...m, content: `오류: ${e.message}` } : m)));
+    }
   };
 
   const handleKeyPress = (e) => {
@@ -54,29 +82,22 @@ const ChatPage = () => {
 
   return (
     <div className="flex h-screen bg-gray-50">
-      {/* 공통 Sidebar 컴포넌트 사용 */}
       <Sidebar />
-
-      {/* Main Content */}
       <div className="flex-1 flex flex-col">
-        {/* Header */}
         <div className="bg-white border-b border-gray-200 px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-lg font-semibold text-gray-900">채팅</h2>
-              <p className="text-sm text-gray-600">실시간 AI와의 대화</p>
+              <p className="text-sm text-gray-600">팀장 에이전트와 대화</p>
             </div>
           </div>
         </div>
 
-        {/* Chat Area */}
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
           {messages.map((message) => (
             <div key={message.id} className={`flex ${message.isUser ? 'justify-end' : 'justify-start'}`}>
               <div className="max-w-xs lg:max-w-md">
-                <div className={`${
-                  message.isUser ? 'bg-blue-500 text-white' : 'bg-white border border-gray-200'
-                } rounded-lg p-3 shadow-sm`}>
+                <div className={`${message.isUser ? 'bg-blue-500 text-white' : 'bg-white border border-gray-200'} rounded-lg p-3 shadow-sm`}>
                   <p className={`text-sm ${message.isUser ? 'text-white' : 'text-gray-700'}`}>
                     {message.content}
                   </p>
@@ -89,7 +110,6 @@ const ChatPage = () => {
           ))}
         </div>
 
-        {/* Input Area */}
         <div className="border-t border-gray-200 bg-white p-4">
           <div className="flex items-end space-x-3">
             <div className="flex-1">
@@ -97,7 +117,7 @@ const ChatPage = () => {
                 <textarea
                   value={inputMessage}
                   onChange={(e) => setInputMessage(e.target.value)}
-                  onKeyPress={handleKeyPress}
+                  onKeyDown={handleKeyPress}  // onKeyPress 대신 onKeyDown이 더 안정적
                   placeholder="메시지를 입력하세요..."
                   className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   rows={1}
@@ -114,12 +134,8 @@ const ChatPage = () => {
             </div>
           </div>
           <div className="flex items-center justify-between mt-2">
-            <div className="text-xs text-gray-500">
-              React 상태 관리 기반 채팅
-            </div>
-            <div className="text-xs text-gray-500">
-              Shift + Enter로 줄바꿈
-            </div>
+            <div className="text-xs text-gray-500">React 상태 관리 기반 채팅</div>
+            <div className="text-xs text-gray-500">Enter 전송 · Shift+Enter 줄바꿈</div>
           </div>
         </div>
       </div>
