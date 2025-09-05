@@ -11,6 +11,9 @@ import bot_db
 from dotenv import load_dotenv
 from openai import OpenAI
 import json
+from memory import ensure_schema, get_context_for_prompt, add_task, update_task_status, add_task_note, upsert_session_summary
+from memory import get_context_for_prompt  # ✅ 요약 컨텍스트 불러오기
+
 
 # 환경 변수 로드
 load_dotenv()
@@ -20,6 +23,18 @@ openai_api_key = os.getenv("OPENAI_API_KEY")
 MODEL_NAME = os.getenv("TEAMLEAD_MODEL", "gpt-4o")
 FINAL_MODEL_NAME = os.getenv("TEAMLEAD_FINAL_MODEL", MODEL_NAME)
 MAX_COMPLETION_TOKENS = int(os.getenv("TEAMLEAD_MAX_TOKENS", "1200"))
+
+# 팀장 에이전트의 경량 메모리 정책 (짧게 저장, JSON 이벤트만)
+MEMORY_POLICY = (
+    "메모리를 절약하세요. 긴 원문은 저장하지 말고 링크(artifact_url)만 남기고, "
+    "요약은 짧게(결과 3~5줄, 피드백 1~3줄, 할당 한 줄)로 유지합니다. "
+    "필요할 때 아래 형식 중 하나의 JSON을 (텍스트 답변과 별개로) 0~1개 포함하세요:\n"
+    "{ \"event\": \"DELEGATION\", \"task_title\": \"...\", \"assignee\": \"...\", \"summary\": \"한 줄\" }\n"
+    "{ \"event\": \"RESULT\", \"task_id\": 123, \"summary\": \"3~5줄\", \"artifact_url\": \"http(s)://...\" }\n"
+    "{ \"event\": \"FEEDBACK\", \"task_id\": 123, \"summary\": \"핵심 1~3개\" }\n"
+    "{ \"event\": \"SESSION_SUMMARY\", \"session_id\": \"...\", \"summary\": \"200~300자\" }\n"
+    "가능하면 JSON만 출력해도 됩니다. JSON은 최대 한 개만 출력하세요."
+)
 
 
 # ✅ 팀장 프롬프트 로더 (content_agent_prompts.json에서 system_prompt 읽기)
@@ -50,7 +65,7 @@ try:
 except Exception as e:
     print("DB init error:", e)
 
-
+ensure_schema()  # 메모리 테이블 생성
 # =============================================================================
 # API 엔드포인트
 # =============================================================================
@@ -190,6 +205,7 @@ def chat_api():
         data = request.get_json()
         user_message = data.get('message', '')
         step = data.get('step', 1)  # ✅ 기본값은 1, 프론트에서 안주면 그냥 1단계 처리
+        session_id = data.get('session_id', 'default')
 
         if not user_message:
             return jsonify({'error': '메시지가 비어있습니다.'}), 400
@@ -200,13 +216,26 @@ def chat_api():
         # ✅ 모델 선택 로직
         model_to_use = FINAL_MODEL_NAME if step == 5 else MODEL_NAME
 
+        # ✅ 짧은 컨텍스트 요약 가져오기
+        context_block = get_context_for_prompt(session_id)
+
+        # ✅ 프롬프트에 주입
+        messages_payload = [
+            {"role": "system", "content": TEAMLEAD_SYSTEM_PROMPT},
+            {"role": "system", "content": MEMORY_POLICY},
+            {"role": "system", "content": f"컨텍 스트(요약):\n{context_block}"},
+            {"role": "user",   "content": user_message}
+        ]
+
+        print("[/api/chat] model =", model_to_use)
+        print("[/api/chat] TEAMLEAD_SYSTEM_PROMPT len =", len(TEAMLEAD_SYSTEM_PROMPT))
+        print("[/api/chat] messages_payload_len =", len(messages_payload))
+
+
         # OpenAI API 호출
         response = client.chat.completions.create(
             model=model_to_use,
-            messages=[
-                {"role": "system", "content": TEAMLEAD_SYSTEM_PROMPT},
-                {"role": "user", "content": user_message}
-            ],
+            messages=messages_payload,
             max_completion_tokens = MAX_COMPLETION_TOKENS ## 토큰 수 조절은 .env에서
         )
 
